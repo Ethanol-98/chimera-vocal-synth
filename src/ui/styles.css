@@ -1348,6 +1348,17 @@ button.ghost:hover,
   white-space: nowrap;
 }
 
+/* the body, in the head's header */
+.left .screen-head {
+  align-items: center;
+  padding-top: 8px;
+}
+
+.left .body-control .segmented button {
+  padding: 2px 9px;
+  font-size: 10px;
+}
+
 /* ---------- a screen */
 .screen {
   position: relative;

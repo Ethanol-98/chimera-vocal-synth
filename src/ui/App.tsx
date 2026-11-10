@@ -20,7 +20,7 @@ import { playDemo, DEMO_SONGS } from "./singing.ts";
 import type { Mode } from "./store.ts";
 import type { BodyName } from "../worklet/protocol.ts";
 import { BodyPad } from "./components/BodyPad.tsx";
-import { bodyLabel, presetOf, PRESETS } from "./body.ts";
+import { presetOf, PRESETS } from "./body.ts";
 
 // three.js only loads when the 3D view is first shown
 const AnatomyView3D = lazy(() => import("./components/AnatomyView3D.tsx").then((m) => ({ default: m.AnatomyView3D })));
@@ -37,8 +37,6 @@ function TopBar() {
   const started = useStore((s) => s.started);
   const starting = useStore((s) => s.starting);
   const start = useStore((s) => s.start);
-  const body = useStore((s) => s.body);
-  const setBody = useStore((s) => s.setBody);
   const volume = useStore((s) => s.volume);
   const setVolume = useStore((s) => s.setVolume);
   const mode = useStore((s) => s.mode);
@@ -66,21 +64,6 @@ function TopBar() {
           { value: "beatbox", label: "Beatbox" },
         ]}
       />
-      {mode !== "bestiary" && (
-        <div className="body-control">
-          <Segmented<BodyName>
-            label="Body"
-            value={presetOf(body)}
-            onChange={(b) => setBody(PRESETS[b])}
-            options={[
-              { value: "male", label: "Male" },
-              { value: "female", label: "Female" },
-              { value: "child", label: "Child" },
-            ]}
-          />
-          <BodyPad />
-        </div>
-      )}
       <div className="topbar-right">
         <label className="volume">
           <span>Volume</span>
@@ -163,22 +146,35 @@ function StartPrompt() {
   );
 }
 
-/** The tall left screen: the face (or the creature) with its overlays. */
+/** The body, in the head's header: three presets and the triangle between them. */
+function BodyControl() {
+  const body = useStore((s) => s.body);
+  const setBody = useStore((s) => s.setBody);
+  return (
+    <div className="body-control">
+      <Segmented<BodyName>
+        label="Body"
+        value={presetOf(body)}
+        onChange={(b) => setBody(PRESETS[b])}
+        options={[
+          { value: "male", label: "Male" },
+          { value: "female", label: "Female" },
+          { value: "child", label: "Child" },
+        ]}
+      />
+      <BodyPad />
+    </div>
+  );
+}
+
+/** The tall left screen: the face (or the creature) with its overlays. No title: it shows itself. */
 function LeftScreen() {
   const mode = useStore((s) => s.mode);
-  const body = useStore((s) => s.body);
   const threeD = useStore((s) => s.view.threeD);
   const bestiary = mode === "bestiary";
   const Face = threeD ? AnatomyView3D : AnatomyView;
   return (
-    <Screen
-      className="left"
-      focus
-      title={bestiary ? "Creature" : "Vocal tract"}
-      sub={bestiary ? "Airway / live" : `${bodyLabel(body)} / ${threeD ? "3D" : "midsagittal"}`}
-      label={bestiary ? "Live creature airway" : "Live vocal tract"}
-      tools={<ViewToggles />}
-    >
+    <Screen className="left" focus lead={bestiary ? undefined : <BodyControl />} label={bestiary ? "Live creature airway" : "Live vocal tract"} tools={<ViewToggles />}>
       <Suspense fallback={null}>
         {bestiary ? <CreatureView /> : mode === "speak" ? <Face slots={speechSlots} info={speechInfo} overlay={speechWords} /> : mode === "sing" ? <Face info={singInfo} overlay={singWords} /> : mode === "beatbox" ? <Face slots={beatSlots} info={beatInfo} showFormants={false} /> : <Face />}
       </Suspense>
