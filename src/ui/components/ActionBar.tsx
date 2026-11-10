@@ -37,12 +37,15 @@ export function ActionBar(props: { label: string; onSpace: () => void; children:
   );
 }
 
-/** The bright button (amber: it makes sound). While its sound plays it reads Stop. */
-export function PrimaryButton(props: { label: string; playing?: boolean; busy?: string | null; icon?: "play" | "breath"; className?: string; onClick: () => void }) {
+/**
+ * The bright button (amber: it makes sound). While its sound plays it reads Stop. While the audio
+ * starts, every main button waits, and the one pressed (`pressed`, default all) says so.
+ */
+export function PrimaryButton(props: { label: string; playing?: boolean; busy?: string | null; pressed?: boolean; icon?: "play" | "breath"; className?: string; title?: string; onClick: () => void }) {
   const starting = useStore((s) => s.starting);
-  const text = starting ? "Starting…" : props.busy ? props.busy : props.playing ? "Stop" : props.label;
+  const text = starting && props.pressed !== false ? "Starting…" : props.busy ? props.busy : props.playing ? "Stop" : props.label;
   return (
-    <button type="button" className={`act-primary${props.playing ? " on" : ""}${props.className ? " " + props.className : ""}`} onClick={props.onClick} disabled={starting || !!props.busy}>
+    <button type="button" className={`act-primary${props.playing ? " on" : ""}${props.className ? " " + props.className : ""}`} onClick={props.onClick} disabled={starting || !!props.busy} title={props.title}>
       <span className={`act-icon ${props.playing ? "stop" : (props.icon ?? "play")}`} aria-hidden="true" />
       {text}
     </button>

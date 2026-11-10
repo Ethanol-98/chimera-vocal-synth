@@ -344,3 +344,40 @@ describe("settings that belong to one tab stay in it", () => {
     done();
   });
 });
+
+describe("a main button pressed before the audio is up", () => {
+  const store = async () => (await import("../src/ui/store.ts")).useStore;
+  const failing = () => Promise.reject(new Error("no audio device"));
+
+  test("Breathe breathes once the audio starts, but not in a tab switched to meanwhile", async () => {
+    const useStore = await store();
+    useStore.setState({ started: false, mode: "play", hold: false });
+    let pending = useStore.getState().toggleBreath();
+    startAudio();
+    await pending;
+    expect(useStore.getState().hold).toBe(true);
+    useStore.getState().setHold(false);
+    useStore.setState({ started: false });
+    pending = useStore.getState().toggleBreath();
+    useStore.getState().setMode("sing"); // Sing breathes by itself: a held breath would drone
+    startAudio();
+    await pending;
+    expect(useStore.getState().hold).toBe(false);
+  });
+
+  test("a failed start leaves Breathe off and the beat stopped, so the buttons offer a retry", async () => {
+    const useStore = await store();
+    const start = engineStub.start;
+    engineStub.start = failing;
+    useStore.setState({ started: false, mode: "play", hold: false });
+    await useStore.getState().toggleBreath();
+    expect(useStore.getState().hold).toBe(false);
+    expect(useStore.getState().startError).toBe("no audio device");
+    useStore.getState().setMode("beatbox");
+    useStore.getState().setBeatPlaying(true);
+    await new Promise((r) => setTimeout(r, 0));
+    expect(useStore.getState().beat.playing).toBe(false);
+    engineStub.start = start;
+    useStore.setState({ startError: null });
+  });
+});

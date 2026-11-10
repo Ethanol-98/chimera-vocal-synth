@@ -77,6 +77,8 @@ interface State {
   setArtic: (v: Partial<HumanArtic>, tipFree?: boolean) => void;
   setVolume: (v: number) => void;
   setHold: (h: boolean) => void;
+  /** Breathe: on (starting the audio first, if need be) or off */
+  toggleBreath: () => Promise<void>;
   /** a key went down (velocity 1..127; the on-screen keys send 96) */
   noteOn: (midi: number, velocity?: number) => void;
   noteOff: (midi: number) => void;
@@ -216,7 +218,9 @@ export const useStore = create<State>((set, get) => ({
       .start()
       .then(() => {
         const b = get().beat;
-        if (get().started && b.playing) engine.setBeat({ steps: b.steps, bpm: b.bpm, swing: b.swing, playing: true });
+        // the audio didn't start: the beat isn't playing, so its button offers Play (a retry), not Stop
+        if (!get().started) set((s) => ({ beat: { ...s.beat, playing: false } }));
+        else if (b.playing) engine.setBeat({ steps: b.steps, bpm: b.bpm, swing: b.swing, playing: true });
       });
   },
   loadBeatPreset: (name) => {
@@ -308,6 +312,14 @@ export const useStore = create<State>((set, get) => ({
   setHold: (h) => {
     set({ hold: h });
     updateGate(get());
+  },
+  toggleBreath: async () => {
+    if (get().hold) return get().setHold(false);
+    const mode = get().mode;
+    await get().start();
+    // not if the audio failed to start, nor in a tab switched to meanwhile (Sing and Speak breathe
+    // by themselves, and a held breath would drone under them)
+    if (get().started && get().mode === mode) get().setHold(true);
   },
   noteOn: (midi, velocity = 96) => {
     const held = get().heldNotes.filter((n) => n !== midi).concat(midi);

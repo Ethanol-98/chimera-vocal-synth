@@ -131,6 +131,12 @@ async function run(viewport: { width: number; height: number }, tag: string) {
   if (!(singing > 0.01)) errors.push(`[${tag}] a sung key made no sound (${singing})`);
   if (!(after < 1e-3)) errors.push(`[${tag}] voice still sounding after the sung notes: ${after}`);
   if (sylBefore === sylAfter) errors.push(`[${tag}] the syllable cursor did not move (${sylBefore})`);
+  // a menu isn't an instrument: a letter typed in it picks an entry, it doesn't play a note
+  await page.getByRole("combobox", { name: "Song" }).focus();
+  await page.keyboard.down("d");
+  const menuNotes = await page.locator(".keys .key.down").count();
+  await page.keyboard.up("d");
+  if (menuNotes) errors.push(`[${tag}] a key typed in the song menu played a note`);
   await page.getByRole("combobox", { name: "Song" }).selectOption("Made of air");
   await page.getByRole("button", { name: /^Sing$/ }).click();
   await page.waitForTimeout(2200);
@@ -162,6 +168,20 @@ async function run(viewport: { width: number; height: number }, tag: string) {
     });
     logs.push(`[${tag}] creature ${name}: ${JSON.stringify(state)}`);
   }
+  // the sounding call's button reads Stop, and stops it (start one if the last has ended)
+  const stop = page.getByRole("button", { name: /^Stop$/ });
+  if (!(await stop.count())) {
+    await page.locator(".act-call").first().click();
+    await page.waitForTimeout(500);
+  }
+  await stop.click();
+  await page.waitForTimeout(400);
+  const callAfterStop = await page.evaluate(() => {
+    // @ts-expect-error debug handle
+    return window.__chimeraEngine?.latestCreature?.t?.call ?? null;
+  });
+  logs.push(`[${tag}] creature call after Stop: ${callAfterStop}`);
+  if (callAfterStop !== null) errors.push(`[${tag}] the call kept sounding after Stop (${callAfterStop})`);
   await page.keyboard.down("g");
   await page.waitForTimeout(600);
   const held = await page.evaluate(() => {

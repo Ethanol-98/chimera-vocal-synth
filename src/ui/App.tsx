@@ -139,18 +139,12 @@ function LeftScreen() {
 /** Play's main button: breathe (the voice sounds while it's on), and Whisper beside it. */
 function PlayActions() {
   const hold = useStore((s) => s.hold);
-  const setHold = useStore((s) => s.setHold);
-  const start = useStore((s) => s.start);
+  const toggleBreath = useStore((s) => s.toggleBreath);
   const voiced = useStore((s) => s.source.voiced);
   const setSource = useStore((s) => s.setSource);
-  const breathe = async () => {
-    if (hold) return setHold(false);
-    await start();
-    if (useStore.getState().started) setHold(true);
-  };
   return (
-    <ActionBar label="Voice" onSpace={() => void breathe()}>
-      <PrimaryButton label="Breathe" icon="breath" playing={hold} onClick={() => void breathe()} />
+    <ActionBar label="Voice" onSpace={() => void toggleBreath()}>
+      <PrimaryButton label="Breathe" icon="breath" playing={hold} onClick={() => void toggleBreath()} />
       <Chip on={!voiced} onClick={() => setSource({ voiced: !voiced })}>
         Whisper
       </Chip>

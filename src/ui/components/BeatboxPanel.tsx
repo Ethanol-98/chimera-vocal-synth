@@ -64,6 +64,7 @@ function Pads() {
     const onKey = (e: KeyboardEvent) => {
       if (e.repeat || e.metaKey || e.ctrlKey || e.altKey) return;
       const t = e.target as HTMLElement;
+      if (t && t.tagName === "SELECT") return;
       if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA") && (t as HTMLInputElement).type !== "range" && (t as HTMLInputElement).type !== "checkbox") return;
       const i = "1234567890".indexOf(e.key);
       if (i >= 0 && i < BEAT_SOUNDS.length) {

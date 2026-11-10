@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useStore } from "../store.ts";
 import { useSing, playDemo, stopSinging, soundingSyllable, sungNow, DEMO_SONGS, ensureDictionary } from "../singing.ts";
 import { mouthWords } from "../mouthWords.ts";
@@ -114,17 +114,34 @@ function SongControls() {
   );
 }
 
-/** Sing's main button: sing the chosen song (its own words), or stop it. */
+/**
+ * Sing's main button: sing the chosen song (its own words), or stop it. A song getting ready
+ * (audio starting, the dictionary loading) counts as playing: Stop cancels it, and choosing
+ * another song replaces it.
+ */
 function SingActions() {
   const start = useStore((s) => s.start);
   const demo = useSing((s) => s.demo);
   const [song, setSong] = useState(DEMO_SONGS[0].name);
-  // playDemo waits for the audio itself, so a stop meanwhile (body, mode) cancels it
-  const sing = (name: string) => void playDemo(name, useStore.getState().body, start);
-  const press = () => (demo ? stopSinging() : sing(song));
+  const [pending, setPending] = useState(false);
+  const request = useRef(0);
+  // the audio must be running: if it failed to start, nothing is planned and the error shows
+  const ready = async () => {
+    await start();
+    if (!useStore.getState().started) throw new Error("no audio");
+  };
+  // playDemo waits for `ready` itself, so a stop meanwhile (body, mode, another song) cancels it
+  const sing = (name: string) => {
+    const n = ++request.current;
+    setPending(true);
+    playDemo(name, useStore.getState().body, ready)
+      .catch(() => {})
+      .finally(() => request.current === n && setPending(false));
+  };
+  const press = () => (demo || pending ? stopSinging() : sing(song));
   return (
     <ActionBar label="Song" onSpace={press}>
-      <PrimaryButton label="Sing" playing={!!demo} onClick={press} />
+      <PrimaryButton label="Sing" playing={!!demo || pending} onClick={press} />
       <Menu
         label="Song"
         icon="note"
@@ -132,7 +149,7 @@ function SingActions() {
         options={DEMO_SONGS.map((s) => ({ value: s.name, label: s.name }))}
         onChange={(name) => {
           setSong(name);
-          if (demo) sing(name);
+          if (demo || pending) sing(name);
         }}
       />
     </ActionBar>

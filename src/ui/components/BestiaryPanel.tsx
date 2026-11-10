@@ -4,7 +4,8 @@ import { CREATURES, creatureById } from "../../wasm/engine.ts";
 import type { CreatureDef } from "../../wasm/types.ts";
 import { useLiveCreature } from "../creatureLive.ts";
 import { Keys, MidiButton } from "./Keys.tsx";
-import { ActionBar } from "./ActionBar.tsx";
+import { ActionBar, PrimaryButton } from "./ActionBar.tsx";
+import { engine } from "../../audio/AudioEngine.ts";
 import { Menu } from "./Controls.tsx";
 import { Chip, Screen } from "./Screen.tsx";
 import { EncoderPages, type EncoderPage } from "./Encoder.tsx";
@@ -45,31 +46,29 @@ function Gallery() {
 }
 
 /**
- * Bestiary's main buttons: the animal's calls (each one plays it; the one sounding is lit), and
- * Breathe, which keeps the breath on to shape the sound with the controls. Space replays the last
- * call. (The animal's description is written under its name, on the creature screen.)
+ * Bestiary's main buttons: the animal's calls (each plays it; the one sounding reads Stop), and
+ * Breathe, which keeps the breath on to shape the sound with the controls. Space stops the call
+ * sounding, or plays the last one again. (The animal's description is written under its name, on
+ * the creature screen.)
  */
 function CallActions({ def }: { def: CreatureDef }) {
   const playCall = useStore((s) => s.playCall);
-  const starting = useStore((s) => s.starting);
   const hold = useStore((s) => s.hold);
-  const setHold = useStore((s) => s.setHold);
-  const live = useLiveCreature(def.id);
+  const toggleBreath = useStore((s) => s.toggleBreath);
+  const sounding = useLiveCreature(def.id)?.call ?? null;
   const [last, setLast] = useState<string | null>(null);
-  const play = (id: string) => {
+  const press = (id: string) => {
+    if (sounding === id) return engine.stopCall();
     setLast(id);
     playCall(id);
   };
-  const again = def.calls.find((c) => c.id === last) ?? def.calls[0];
+  const again = sounding ?? (def.calls.find((c) => c.id === last) ?? def.calls[0])?.id;
   return (
-    <ActionBar label="Calls" onSpace={() => again && play(again.id)}>
+    <ActionBar label="Calls" onSpace={() => again && press(again)}>
       {def.calls.map((c) => (
-        <button key={c.id} type="button" className={`act-primary act-call${live?.call === c.id ? " on" : ""}`} onClick={() => play(c.id)} disabled={starting} title={c.hint}>
-          <span className="act-icon play" aria-hidden="true" />
-          {c.name}
-        </button>
+        <PrimaryButton key={c.id} className="act-call" label={c.name} playing={sounding === c.id} pressed={last === c.id} title={c.hint} onClick={() => press(c.id)} />
       ))}
-      <Chip on={hold} onClick={() => setHold(!hold)} title="Keep the breath on and shape the sound with the controls">
+      <Chip on={hold} onClick={() => void toggleBreath()} title="Keep the breath on and shape the sound with the controls">
         Breathe
       </Chip>
     </ActionBar>

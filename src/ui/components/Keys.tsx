@@ -32,6 +32,7 @@ export function Keys() {
     const onDown = (e: KeyboardEvent) => {
       if (e.repeat || e.metaKey || e.ctrlKey || e.altKey) return;
       const target = e.target as HTMLElement;
+      if (target && target.tagName === "SELECT") return;
       if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)) {
         if ((target as HTMLInputElement).type !== "range" && (target as HTMLInputElement).type !== "checkbox") return;
       }

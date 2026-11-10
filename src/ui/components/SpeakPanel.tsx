@@ -146,6 +146,8 @@ export function SpeakRight() {
     setBusy(true);
     try {
       await start();
+      // the audio didn't start (the error shows on the bar): speaking would only light Stop
+      if (!useStore.getState().started) return;
       await speakText(text, { ipa, body, rate, f0 });
     } finally {
       setBusy(false);
@@ -153,6 +155,7 @@ export function SpeakRight() {
   };
   const pad = async (c: string) => {
     await start();
+    if (!useStore.getState().started) return;
     speakPhrases([{ segments: tokenizeIpa(`ˈ${vowel}${c}${vowel}`), intonation: "flat" }], { body, rate, f0 });
   };
 
