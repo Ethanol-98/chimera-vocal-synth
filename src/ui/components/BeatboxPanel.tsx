@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useStore } from "../store.ts";
 import { engine } from "../../audio/AudioEngine.ts";
 import { BEAT_SOUNDS, BEAT_PRESETS, formatBeat, parseBeat, type Airstream } from "../../wasm/engine.ts";
-import { Keys } from "./Keys.tsx";
+import { Keys, MidiButton } from "./Keys.tsx";
 import { Chip, Screen } from "./Screen.tsx";
 import { EncoderPages } from "./Encoder.tsx";
 import { Spectrogram } from "./Spectrogram.tsx";
@@ -217,7 +217,7 @@ export function BeatboxRight() {
       <Screen className="s-transport" title="Transport">
         <Transport />
       </Screen>
-      <Screen className="s-keys s-keys-compact" title="Keys" sub="Hum a bass note">
+      <Screen className="s-keys s-keys-compact" title="Keys" sub="Hum a bass note" tools={<MidiButton />}>
         <Keys />
       </Screen>
     </div>

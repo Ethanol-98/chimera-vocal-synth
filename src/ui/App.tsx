@@ -7,7 +7,7 @@ import { Stroboscope } from "./components/Stroboscope.tsx";
 import { SpectrumView } from "./components/SpectrumView.tsx";
 import { VowelMap } from "./components/VowelMap.tsx";
 import { VoiceControls, VoiceToggles } from "./components/VoiceControls.tsx";
-import { Keys } from "./components/Keys.tsx";
+import { Keys, MidiButton } from "./components/Keys.tsx";
 import { Segmented, Toggle } from "./components/Controls.tsx";
 import { Screen } from "./components/Screen.tsx";
 import { SpeakRight, speechInfo, speechSlots, speechWords } from "./components/SpeakPanel.tsx";
@@ -207,7 +207,7 @@ function PlayRight() {
       <Screen className="s-voice" title="Voice" tools={<VoiceToggles />}>
         <VoiceControls />
       </Screen>
-      <Screen className="s-keys" title="Keys" sub={`${Math.round(f0)} Hz`}>
+      <Screen className="s-keys" title="Keys" sub={`${Math.round(f0)} Hz`} tools={<MidiButton />}>
         <Keys />
       </Screen>
     </div>

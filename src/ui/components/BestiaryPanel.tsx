@@ -3,7 +3,7 @@ import { useStore } from "../store.ts";
 import { CREATURES, creatureById } from "../../wasm/engine.ts";
 import type { CreatureDef } from "../../wasm/types.ts";
 import { useLiveCreature } from "../creatureLive.ts";
-import { Keys } from "./Keys.tsx";
+import { Keys, MidiButton } from "./Keys.tsx";
 import { Chip, Screen } from "./Screen.tsx";
 import { EncoderPages, type EncoderPage } from "./Encoder.tsx";
 import { Spectrogram } from "./Spectrogram.tsx";
@@ -128,7 +128,7 @@ export function BestiaryRight() {
       <Screen className="s-airway" title="Airway" sub="Each tube unrolled">
         <CreatureTubes />
       </Screen>
-      <Screen className="s-keys s-keys-compact" title="Keys" sub="The held voice or a call, at the key's pitch">
+      <Screen className="s-keys s-keys-compact" title="Keys" sub="The held voice or a call, at the key's pitch" tools={<MidiButton />}>
         <Keys />
       </Screen>
     </div>
