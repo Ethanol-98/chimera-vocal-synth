@@ -89,7 +89,7 @@ export function Stroboscope() {
       label(ctx, `${(a * 100).toFixed(1)} MM²`, tx1, h - 4, { size: 9, color: TEXT.secondary, align: "right", ls: 0.12 });
     } else {
       // in the area band, clear of the FLOW label below it
-      labelBlock(ctx, "START AUDIO TO SEE THEM VIBRATE", tx0, (yA0 + yA1) / 2, tx1 - tx0, { size: 9, color: TEXT.secondary, ls: 0.16 });
+      labelBlock(ctx, "BREATHE TO SEE THEM VIBRATE", tx0, (yA0 + yA1) / 2, tx1 - tx0, { size: 9, color: TEXT.secondary, ls: 0.16 });
     }
   });
   return <canvas ref={ref} className="instrument-canvas" aria-label="Vocal folds seen from above, replayed slowly, with the glottal area and flow" role="img" />;

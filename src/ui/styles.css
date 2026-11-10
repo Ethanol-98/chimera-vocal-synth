@@ -1540,8 +1540,6 @@ button.primary.large {
   outline-offset: 1px;
 }
 
-/* the start prompt, over the left screen */
-
 /* ---------- encoders (OP-1 style) */
 .enc-pages {
   display: flex;
