@@ -51,7 +51,7 @@ A hook, `usePhosphor(draw)`, replaces `useCanvasLoop` for the vector screens: DP
 | Mode | Left | Right column |
 |---|---|---|
 | Play | face (`AnatomyView`) | Breathe + Whisper; tube, vocal folds, spectrum, vowels, voice encoders, keys |
-| Speak | face | Speak + rate + IPA; say (text field, transcription, examples), gestural score, consonant chart, tube, vocal folds |
+| Speak | face | Speak + examples menu + rate + IPA; say (text field, transcription), gestural score, consonant chart, tube, vocal folds |
 | Sing | face | Sing + song menu; pitch roll, lyrics chips, spectrum with the ring zone, song encoders, keys |
 | Beatbox | face with the hit's big symbol | Play beat + pattern menu + Mic FX; step sequencer, waterfall spectrogram, pads, tempo encoders + the beat as text, bass keys |
 | Bestiary | creature (`CreatureView`, its description under its name) | the calls + Breathe; creature gallery, waterfall spectrogram and unrolled airway, creature encoders, compact keys |

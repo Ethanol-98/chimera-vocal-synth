@@ -3,7 +3,7 @@ import { useStore } from "../store.ts";
 import { speakText, speakPhrases, stopSpeaking, onPlan, currentPlan, spokenWordNow, speakingNow } from "../speech.ts";
 import { mouthWords } from "../mouthWords.ts";
 import { tokenizeIpa } from "../../wasm/engine.ts";
-import { Slider } from "./Controls.tsx";
+import { Menu, Slider } from "./Controls.tsx";
 import { Chip, Screen } from "./Screen.tsx";
 import { ActionBar, PrimaryButton } from "./ActionBar.tsx";
 import { ScoreView, planNow } from "./ScoreView.tsx";
@@ -165,6 +165,16 @@ export function SpeakRight() {
     <div className="right right-speak">
       <ActionBar label="Speak" onSpace={press}>
         <PrimaryButton label="Speak" playing={speaking} busy={busy ? "Preparing…" : null} onClick={press} />
+        {/* puts an example in the box: the menu always reads Examples, since the box shows the words */}
+        <Menu
+          label="Examples"
+          value=""
+          options={[{ value: "", label: "Examples", disabled: true }, ...EXAMPLES.map((ex) => ({ value: ex, label: ex }))]}
+          onChange={(ex) => {
+            setText(ex);
+            setIpa(false);
+          }}
+        />
         <div className="act-slider">
           <Slider label="Rate" value={rate} min={0.5} max={1.8} onChange={setRate} format={(v) => `${v.toFixed(2)}×`} />
         </div>
@@ -192,20 +202,6 @@ export function SpeakRight() {
             <p className="transcription" aria-live="polite">
               {trans ? `/${trans}/` : ""}
             </p>
-          </div>
-          <div className="examples" role="group" aria-label="Examples">
-            {EXAMPLES.map((ex) => (
-              <Chip
-                key={ex}
-                toggle={false}
-                onClick={() => {
-                  setText(ex);
-                  setIpa(false);
-                }}
-              >
-                {ex}
-              </Chip>
-            ))}
           </div>
         </div>
       </Screen>

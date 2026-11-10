@@ -103,6 +103,13 @@ async function run(viewport: { width: number; height: number }, tag: string) {
   }
   logs.push(`[${tag}] speech rms then silence ${speechRms.map((r) => r.toFixed(4)).join(",")}`);
   if (!(Math.max(...speechRms.slice(-3)) < 1e-3)) errors.push(`[${tag}] voice still sounding after the phrase: ${speechRms.slice(-3).join(",")}`);
+  // the Examples menu puts a phrase in the box, then reads Examples again
+  const examples = page.getByRole("combobox", { name: "Examples" });
+  await examples.selectOption({ label: "She sells sea shells by the sea shore." });
+  const typed = await page.getByRole("textbox", { name: "Text to speak" }).inputValue();
+  const menuNow = await examples.inputValue();
+  logs.push(`[${tag}] example picked: box "${typed}", menu "${menuNow}"`);
+  if (!typed.startsWith("She sells") || menuNow !== "") errors.push(`[${tag}] the Examples menu didn't fill the box and reset (box "${typed}", menu "${menuNow}")`);
   await page.locator("button.ipa", { hasText: "ʃ" }).first().click();
   await page.waitForTimeout(700);
   await page.screenshot({ path: `${outDir}/${tag}-4-pad.png` });
@@ -314,6 +321,6 @@ await run({ width: 1440, height: 980 }, "desktop");
 await run({ width: 390, height: 844 }, "mobile");
 await browser.close();
 console.log("console errors:", errors.length ? "\n" + errors.join("\n") : "none");
-console.log(logs.filter((l) => /load|rate|warn|transcription|creature|held|back to|beatbox|silence|sing|octave|retry/i.test(l)).slice(0, 52).join("\n"));
+console.log(logs.filter((l) => /load|rate|warn|transcription|example|creature|held|back to|beatbox|silence|sing|octave|retry/i.test(l)).slice(0, 52).join("\n"));
 // a run that collected errors fails, so CI and agents can't read it as a pass
 if (errors.length) process.exit(1);

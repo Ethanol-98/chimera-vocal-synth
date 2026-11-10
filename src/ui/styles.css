@@ -376,12 +376,6 @@ input[type="range"]::-moz-range-thumb {
   gap: 10px;
 }
 
-.examples {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
 .chip {
   border: 1px solid var(--line);
   background: transparent;
@@ -1326,8 +1320,10 @@ button.primary.large {
   box-shadow: 0 0 10px rgba(255, 179, 64, 0.35);
 }
 
+/* shrinks before the bar wraps (to 120 px), grows to 200 px when there's room */
 .act-slider {
-  width: 200px;
+  flex: 1 1 120px;
+  max-width: 200px;
 }
 
 .act-error {
@@ -1855,6 +1851,16 @@ input[type="range"]::-moz-range-thumb {
 
 .s-say { grid-area: say; }
 
+/* the text and its transcription: no floor, or the screen is mostly empty */
+.right-speak .s-say .screen-body {
+  min-height: 0;
+}
+
+/* a select is as wide as its longest option (here a whole sentence); this one always reads Examples */
+.right-speak .act-row .menu select {
+  width: 9.5em;
+}
+
 /* the tube and folds' floor sets how tall the score is in a short window (rows of canvases share
    by fr from their floors): lower, so the speak button above them fits a 1280 x 800 window */
 .right-speak .s-tube .screen-body,
@@ -1867,7 +1873,7 @@ input[type="range"]::-moz-range-thumb {
 .say {
   padding: 6px 14px 10px;
   display: grid;
-  grid-template-rows: auto auto minmax(0, 1fr);
+  grid-template-rows: auto auto;
   gap: 8px;
   overflow: hidden;
 }
@@ -1906,28 +1912,6 @@ input[type="range"]::-moz-range-thumb {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.say .examples {
-  display: flex;
-  flex-wrap: nowrap;
-  gap: 4px;
-  align-items: flex-start;
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-
-.say .examples .chip {
-  flex: none;
-}
-
-.say .examples::-webkit-scrollbar {
-  display: none;
-}
-
-.say .examples .chip {
-  font-size: 9px;
-  padding: 2px 7px;
 }
 
 .vowel-pick {
@@ -2038,18 +2022,12 @@ input[type="range"]::-moz-range-thumb {
   .right-speak .screen-body {
     min-height: 200px;
   }
-  .s-say .screen-body {
-    min-height: 170px;
-  }
 }
 
 @media (max-width: 640px) {
   .right-speak {
     grid-template-columns: minmax(0, 1fr);
     grid-template-areas: "act" "say" "score" "chart" "tube" "folds";
-  }
-  .s-say .screen-body {
-    min-height: 230px;
   }
   .say-row {
     flex-wrap: wrap;
