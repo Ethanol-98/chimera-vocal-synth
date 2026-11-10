@@ -100,7 +100,11 @@ export function CreatureView() {
     const tele = live ?? previewTelemetry(def, st.cparams[def.id]);
     // a narrow screen (a phone) stacks the title and status, and puts the readouts two by two
     const compact = w < 560;
-    const top = compact ? 96 : 64, slotH = compact ? 132 : Math.min(118, h * 0.2);
+    // what the animal is, under its name (its place in the right column went to the calls)
+    const blurbO = { size: 10, color: TEXT.secondary, ls: 0.08 };
+    const blurb = wrapLabel(ctx, def.blurb, Math.min(w - 36, 460), blurbO);
+    const blurbY = compact ? 90 : 76, blurbH = blurb.length * 15;
+    const top = (compact ? 96 : 64) + blurbH, slotH = compact ? 132 : Math.min(118, h * 0.2);
     const vw = vis.view.x1 - vis.view.x0, vh = vis.view.y1 - vis.view.y0;
     const sc = Math.min((w * 0.86) / vw, ((h - top - slotH) * 0.9) / vh);
     const ox = w / 2 - ((vis.view.x0 + vis.view.x1) / 2) * sc;
@@ -189,6 +193,7 @@ export function CreatureView() {
     // like a map's title: the name, the latin name, and what it is doing
     label(ctx, fit(ctx, def.name.toUpperCase(), w - 32, compact ? 18 : 24, 0.18), 16, compact ? 30 : 34, { size: compact ? 18 : 24, color: TEXT.primary, ls: 0.18 });
     label(ctx, fit(ctx, def.latin.toUpperCase(), w - 34, 10, 0.16), 18, compact ? 48 : 54, { size: 10, color: TEXT.secondary, ls: 0.16 });
+    blurb.forEach((line, i) => label(ctx, line, 18, blurbY + i * 15, blurbO));
     const state = live ? (live.call ? (def.calls.find((c) => c.id === live.call)?.name ?? live.call) : live.gate > 0.05 ? "Sustaining" : "At rest") : "Not started";
     const pitchText = pp ? (() => { const f = fmtParam(pitch, pp); return `${f.value} ${f.unit}`.trim().toUpperCase(); })() : "";
     if (compact) {

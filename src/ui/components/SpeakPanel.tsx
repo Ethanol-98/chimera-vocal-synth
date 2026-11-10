@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { useStore } from "../store.ts";
-import { speakText, speakPhrases, stopSpeaking, onPlan, currentPlan, spokenWordNow } from "../speech.ts";
+import { speakText, speakPhrases, stopSpeaking, onPlan, currentPlan, spokenWordNow, speakingNow } from "../speech.ts";
 import { mouthWords } from "../mouthWords.ts";
 import { tokenizeIpa } from "../../wasm/engine.ts";
-import { Slider, Toggle } from "./Controls.tsx";
+import { Slider } from "./Controls.tsx";
 import { Chip, Screen } from "./Screen.tsx";
+import { ActionBar, PrimaryButton } from "./ActionBar.tsx";
 import { ScoreView, planNow } from "./ScoreView.tsx";
 import { TubeView } from "./TubeView.tsx";
 import { Stroboscope } from "./Stroboscope.tsx";
@@ -112,7 +113,22 @@ function ConsonantChart(props: { onPad: (c: string) => void }) {
   );
 }
 
-/** Speak mode's right column: what to say, the gestural score, the consonant chart, the tube and folds. */
+/** Whether speech is sounding, polled each frame (re-renders only when it changes). */
+function useSpeaking(): boolean {
+  const [on, setOn] = useState(false);
+  useEffect(() => {
+    let raf = 0;
+    const loop = () => {
+      setOn(speakingNow());
+      raf = requestAnimationFrame(loop);
+    };
+    raf = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(raf);
+  }, []);
+  return on;
+}
+
+/** Speak mode's right column: the speak button, what to say, the gestural score, the consonant chart, the tube and folds. */
 export function SpeakRight() {
   const body = useStore((s) => s.body);
   const f0 = useStore((s) => s.source.f0);
@@ -123,6 +139,7 @@ export function SpeakRight() {
   const [busy, setBusy] = useState(false);
   const [trans, setTrans] = useState(currentPlan()?.transcription ?? "");
   const [vowel, setVowel] = useState("ɑ");
+  const speaking = useSpeaking();
   useEffect(() => onPlan((p) => setTrans(p?.transcription ?? "")), []);
 
   const speak = async () => {
@@ -139,9 +156,20 @@ export function SpeakRight() {
     speakPhrases([{ segments: tokenizeIpa(`ˈ${vowel}${c}${vowel}`), intonation: "flat" }], { body, rate, f0 });
   };
 
+  const press = () => (speaking ? stopSpeaking() : void speak());
+
   return (
     <div className="right right-speak">
-      <Screen className="s-say" title="Say" sub="Text to speech" tools={<Toggle label="Text is IPA" checked={ipa} onChange={setIpa} />}>
+      <ActionBar label="Speak" onSpace={press}>
+        <PrimaryButton label="Speak" playing={speaking} busy={busy ? "Preparing…" : null} onClick={press} />
+        <div className="act-slider">
+          <Slider label="Rate" value={rate} min={0.5} max={1.8} onChange={setRate} format={(v) => `${v.toFixed(2)}×`} />
+        </div>
+        <Chip on={ipa} onClick={() => setIpa(!ipa)}>
+          Text is IPA
+        </Chip>
+      </ActionBar>
+      <Screen className="s-say" label="What to say">
         <div className="say">
           <div className="say-row">
             <textarea
@@ -156,22 +184,11 @@ export function SpeakRight() {
               aria-label={ipa ? "IPA to speak" : "Text to speak"}
               placeholder={ipa ? "Type IPA, for example ˈhɛloʊ" : "Type something for the voice to say"}
             />
-            <div className="say-actions">
-              <button className="primary" onClick={() => void speak()} disabled={busy}>
-                {busy ? "Preparing…" : "Speak"}
-              </button>
-              <button className="ghost" onClick={stopSpeaking}>
-                Stop
-              </button>
-            </div>
           </div>
           <div className="say-row">
             <p className="transcription" aria-live="polite">
-              {trans ? `/${trans}/` : "The transcription appears here."}
+              {trans ? `/${trans}/` : ""}
             </p>
-            <div className="say-rate">
-              <Slider label="Rate" value={rate} min={0.5} max={1.8} onChange={setRate} format={(v) => `${v.toFixed(2)}×`} />
-            </div>
           </div>
           <div className="examples" role="group" aria-label="Examples">
             {EXAMPLES.map((ex) => (

@@ -29,7 +29,8 @@ async function run(viewport: { width: number; height: number }, tag: string) {
   await page.screenshot({ path: `${outDir}/${tag}-0-idle.png` });
   // the app opens on Sing; this run starts in Play
   await page.getByRole("radio", { name: "Play" }).click();
-  const startBtn = page.getByRole("button", { name: /breathe in and start/i });
+  // each tab's main button starts the audio: Play's breathes
+  const startBtn = page.getByRole("button", { name: /^Breathe$/ });
   await startBtn.click();
   await page.waitForTimeout(1800);
   await page.screenshot({ path: `${outDir}/${tag}-1-running.png` });
@@ -130,12 +131,13 @@ async function run(viewport: { width: number; height: number }, tag: string) {
   if (!(singing > 0.01)) errors.push(`[${tag}] a sung key made no sound (${singing})`);
   if (!(after < 1e-3)) errors.push(`[${tag}] voice still sounding after the sung notes: ${after}`);
   if (sylBefore === sylAfter) errors.push(`[${tag}] the syllable cursor did not move (${sylBefore})`);
-  await page.getByRole("button", { name: "Made of air" }).click();
+  await page.getByRole("combobox", { name: "Song" }).selectOption("Made of air");
+  await page.getByRole("button", { name: /^Sing$/ }).click();
   await page.waitForTimeout(2200);
   const demoRms = await rms();
   const demoNow = await page.locator(".syl.now").textContent().catch(() => null);
   await page.screenshot({ path: `${outDir}/${tag}-5-sing.png`, fullPage: tag !== "desktop" });
-  await page.getByRole("button", { name: /^Stop “Made of air”$/ }).click();
+  await page.getByRole("button", { name: /^Stop$/ }).click();
   await page.waitForTimeout(700);
   const demoStopped = await rms();
   logs.push(`[${tag}] sing demo: rms ${demoRms.toFixed(4)} on "${demoNow}", after stop ${demoStopped.toFixed(4)}`);
@@ -148,7 +150,7 @@ async function run(viewport: { width: number; height: number }, tag: string) {
   for (const [i, name] of names.entries()) {
     await page.locator(".specimen").nth(i).click();
     await page.waitForTimeout(250);
-    await page.locator(".call").first().click();
+    await page.locator(".act-call").first().click();
     await page.waitForTimeout(1300);
     const slug = name.toLowerCase().replace(/[^a-z]+/g, "-");
     if (tag === "desktop" || i === 0) await page.screenshot({ path: `${outDir}/${tag}-5-${slug}.png`, fullPage: tag !== "desktop" });
@@ -172,8 +174,8 @@ async function run(viewport: { width: number; height: number }, tag: string) {
   // beatbox: preset, play, playhead + level from telemetry, a pad, stop
   await page.getByRole("radio", { name: "Beatbox" }).click();
   await page.waitForTimeout(300);
-  await page.getByRole("button", { name: "Breakbeat" }).click();
-  await page.getByRole("button", { name: "Play beat" }).click();
+  await page.getByRole("combobox", { name: "Pattern" }).selectOption("Breakbeat");
+  await page.getByRole("button", { name: /^Play beat$/ }).click();
   const beatSamples: { step: number; rms: number }[] = [];
   for (let i = 0; i < 8; i++) {
     await page.waitForTimeout(250);
@@ -189,8 +191,18 @@ async function run(viewport: { width: number; height: number }, tag: string) {
   logs.push(`[${tag}] beatbox steps ${beatSamples.map((b) => b.step).join(",")} rms ${beatSamples.map((b) => b.rms.toFixed(3)).join(",")}`);
   await page.locator(".pad").first().dispatchEvent("pointerdown");
   await page.waitForTimeout(300);
-  await page.getByRole("button", { name: "Stop" }).click();
+  await page.getByRole("button", { name: /^Stop$/ }).click();
   await page.waitForTimeout(300);
+  // Space presses the tab's main button (here: the beat on, then off), unless typing
+  await page.locator("body").click({ position: { x: 2, y: 2 } });
+  await page.keyboard.press("Space");
+  await page.waitForTimeout(700);
+  const spaceOn = await page.getByRole("button", { name: /^Stop$/ }).count();
+  await page.keyboard.press("Space");
+  await page.waitForTimeout(300);
+  const spaceOff = await page.getByRole("button", { name: /^Play beat$/ }).count();
+  logs.push(`[${tag}] beatbox space: playing ${spaceOn}, stopped ${spaceOff}`);
+  if (spaceOn !== 1 || spaceOff !== 1) errors.push(`[${tag}] Space didn't start and stop the beat (${spaceOn}, ${spaceOff})`);
   // back to the human voice
   await page.getByRole("radio", { name: "Play" }).click();
   await page.waitForTimeout(600);
@@ -236,7 +248,7 @@ async function run(viewport: { width: number; height: number }, tag: string) {
   });
   await page.goto(url, { waitUntil: "networkidle" });
   await page.getByRole("radio", { name: "Play" }).click();
-  await page.getByRole("button", { name: /breathe in and start/i }).click();
+  await page.getByRole("button", { name: /^Breathe$/ }).click();
   await page.waitForTimeout(1500);
   const rate = await page.evaluate(() => {
     // @ts-expect-error debug handle
@@ -251,6 +263,6 @@ await run({ width: 1440, height: 980 }, "desktop");
 await run({ width: 390, height: 844 }, "mobile");
 await browser.close();
 console.log("console errors:", errors.length ? "\n" + errors.join("\n") : "none");
-console.log(logs.filter((l) => /load|rate|warn|transcription|creature|held|back to|beatbox|silence|sing|octave/i.test(l)).slice(0, 40).join("\n"));
+console.log(logs.filter((l) => /load|rate|warn|transcription|creature|held|back to|beatbox|silence|sing|octave/i.test(l)).slice(0, 48).join("\n"));
 // a run that collected errors fails, so CI and agents can't read it as a pass
 if (errors.length) process.exit(1);

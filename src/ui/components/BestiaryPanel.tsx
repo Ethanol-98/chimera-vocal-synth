@@ -1,9 +1,11 @@
-import { memo } from "react";
+import { memo, useState } from "react";
 import { useStore } from "../store.ts";
 import { CREATURES, creatureById } from "../../wasm/engine.ts";
 import type { CreatureDef } from "../../wasm/types.ts";
 import { useLiveCreature } from "../creatureLive.ts";
 import { Keys, MidiButton } from "./Keys.tsx";
+import { ActionBar } from "./ActionBar.tsx";
+import { Menu } from "./Controls.tsx";
 import { Chip, Screen } from "./Screen.tsx";
 import { EncoderPages, type EncoderPage } from "./Encoder.tsx";
 import { Spectrogram } from "./Spectrogram.tsx";
@@ -42,38 +44,49 @@ function Gallery() {
   );
 }
 
-function Calls({ def }: { def: CreatureDef }) {
+/**
+ * Bestiary's main buttons: the animal's calls (each one plays it; the one sounding is lit), and
+ * Breathe, which keeps the breath on to shape the sound with the controls. Space replays the last
+ * call. (The animal's description is written under its name, on the creature screen.)
+ */
+function CallActions({ def }: { def: CreatureDef }) {
   const playCall = useStore((s) => s.playCall);
+  const starting = useStore((s) => s.starting);
   const hold = useStore((s) => s.hold);
   const setHold = useStore((s) => s.setHold);
+  const live = useLiveCreature(def.id);
+  const [last, setLast] = useState<string | null>(null);
+  const play = (id: string) => {
+    setLast(id);
+    playCall(id);
+  };
+  const again = def.calls.find((c) => c.id === last) ?? def.calls[0];
+  return (
+    <ActionBar label="Calls" onSpace={() => again && play(again.id)}>
+      {def.calls.map((c) => (
+        <button key={c.id} type="button" className={`act-primary act-call${live?.call === c.id ? " on" : ""}`} onClick={() => play(c.id)} disabled={starting} title={c.hint}>
+          <span className="act-icon play" aria-hidden="true" />
+          {c.name}
+        </button>
+      ))}
+      <Chip on={hold} onClick={() => setHold(!hold)} title="Keep the breath on and shape the sound with the controls">
+        Breathe
+      </Chip>
+    </ActionBar>
+  );
+}
+
+/** What the keys play: the held voice at the key's pitch, or one of the calls. */
+function KeysMode({ def }: { def: CreatureDef }) {
   const keyCall = useStore((s) => s.keyCall);
   const setKeyCall = useStore((s) => s.setKeyCall);
-  const live = useLiveCreature(def.id);
   return (
-    <div className="calls-body">
-      <div className="calls">
-        {def.calls.map((c) => (
-          <button key={c.id} className={`call${live?.call === c.id ? " playing" : ""}`} onClick={() => playCall(c.id)} title={c.hint}>
-            <span className="call-name">{c.name}</span>
-          </button>
-        ))}
-        <button className={`call sustain${hold ? " on" : ""}`} onClick={() => setHold(!hold)} aria-pressed={hold} title="Keep the breath on and shape the sound with the controls">
-          <span className="call-name">{hold ? "Stop sustaining" : "Sustain"}</span>
-        </button>
-      </div>
-      <div className="keys-mode" role="radiogroup" aria-label="What the keys play">
-        <span className="dim">Keys play</span>
-        <Chip toggle={false} role="radio" aria-checked={keyCall === null} on={keyCall === null} onClick={() => setKeyCall(null)}>
-          Held voice
-        </Chip>
-        {def.calls.map((c) => (
-          <Chip key={c.id} toggle={false} role="radio" aria-checked={keyCall === c.id} on={keyCall === c.id} onClick={() => setKeyCall(c.id)}>
-            {c.name}
-          </Chip>
-        ))}
-      </div>
-      <p className="creature-blurb">{def.blurb}</p>
-    </div>
+    <Menu
+      label="What the keys play"
+      value={keyCall ?? ""}
+      options={[{ value: "", label: "Held voice" }, ...def.calls.map((c) => ({ value: c.id, label: c.name }))]}
+      onChange={(id) => setKeyCall(id || null)}
+    />
   );
 }
 
@@ -107,20 +120,18 @@ function Params({ def }: { def: CreatureDef }) {
   );
 }
 
-/** Bestiary's right column: the creatures, the waterfall, the calls, the controls, the airway, the keys. */
+/** Bestiary's right column: the calls, the creatures, the waterfall, the controls, the airway, the keys. */
 export function BestiaryRight() {
   const creature = useStore((s) => s.creature);
   const def = creatureById(creature);
   return (
     <div className="right right-bestiary">
-      <Screen className="s-gallery" title="Creatures" sub={`${CREATURES.length} specimens`}>
+      {def && <CallActions def={def} />}
+      <Screen className="s-gallery" title="Creatures">
         <Gallery />
       </Screen>
-      <Screen className="s-wf" title="Spectrogram" sub="Waterfall of the call">
+      <Screen className="s-wf" title="Spectrogram">
         <Spectrogram />
-      </Screen>
-      <Screen className="s-calls" title="Calls">
-        {def && <Calls def={def} />}
       </Screen>
       <Screen className="s-cparams" title="Controls">
         {def && <Params def={def} />}
@@ -128,7 +139,7 @@ export function BestiaryRight() {
       <Screen className="s-airway" title="Airway" sub="Each tube unrolled">
         <CreatureTubes />
       </Screen>
-      <Screen className="s-keys s-keys-compact" title="Keys" sub="The held voice or a call, at the key's pitch" tools={<MidiButton />}>
+      <Screen className="s-keys s-keys-compact" title="Keys" tools={<>{def && <KeysMode def={def} />}<MidiButton /></>}>
         <Keys />
       </Screen>
     </div>

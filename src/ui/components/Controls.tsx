@@ -55,3 +55,24 @@ export function Segmented<T extends string>(props: { value: T | null; options: {
     </div>
   );
 }
+
+/** A choice of a few named things (a song, a pattern), as a native select in the vector look. */
+export function Menu<T extends string>(props: { label: string; value: T; options: { value: T; label: string; disabled?: boolean }[]; onChange: (v: T) => void; icon?: "note" }) {
+  return (
+    <span className={`menu${props.icon ? " with-icon" : ""}`}>
+      {props.icon === "note" && (
+        <svg className="menu-icon" viewBox="0 0 12 16" width="10" height="14" aria-hidden="true">
+          <ellipse cx="3.6" cy="12.4" rx="3.2" ry="2.4" fill="currentColor" />
+          <path d="M6.6 12.4V1.5l4.4 2.6" fill="none" stroke="currentColor" strokeWidth="1.4" />
+        </svg>
+      )}
+      <select aria-label={props.label} value={props.value} onChange={(e) => props.onChange(e.target.value as T)}>
+        {props.options.map((o) => (
+          <option key={o.value} value={o.value} disabled={o.disabled}>
+            {o.label}
+          </option>
+        ))}
+      </select>
+    </span>
+  );
+}

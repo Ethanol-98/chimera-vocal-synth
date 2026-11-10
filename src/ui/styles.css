@@ -255,36 +255,6 @@ button.primary.large {
   color: var(--text-dim);
 }
 
-.start-prompt {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  max-width: 360px;
-  padding: 22px 24px;
-  background: rgba(10, 12, 14, 0.82);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-m);
-  text-align: center;
-  backdrop-filter: blur(3px);
-}
-
-.start-prompt p {
-  margin: 0 0 14px;
-}
-
-.start-prompt .hint {
-  margin: 14px 0 0;
-  color: var(--text-dim);
-  font-size: 14px;
-}
-
-.start-prompt .error {
-  margin: 14px 0 0;
-  color: #ffb4a0;
-  font-size: 14px;
-}
-
 .panel h2 {
   font-size: 13px;
   font-weight: 550;
@@ -427,14 +397,6 @@ input[type="range"]::-moz-range-thumb {
 .chip.on {
   color: var(--text);
   border-color: var(--text-dim);
-}
-
-button.ghost {
-  background: transparent;
-  border: 1px solid var(--line);
-  border-radius: var(--radius-s);
-  padding: 7px 14px;
-  cursor: pointer;
 }
 
 .transcription {
@@ -586,70 +548,6 @@ button.ghost {
   line-height: 1.3;
 }
 
-.calls {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 6px;
-}
-
-.call {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: 8px 10px 9px;
-  border: 1px solid var(--line);
-  border-radius: var(--radius-s);
-  background: var(--black);
-  text-align: left;
-  cursor: pointer;
-}
-
-.call:hover {
-  border-color: var(--text-dim);
-}
-
-.call:active,
-.call.sustain.on {
-  background: var(--caliper);
-  border-color: var(--caliper);
-  color: #1d1a10;
-}
-
-.call.playing {
-  border-color: var(--caliper);
-}
-
-.call.playing .call-name {
-  color: var(--caliper);
-}
-
-.call.sustain {
-  grid-column: 1 / -1;
-}
-
-.call-name {
-  font-weight: 600;
-  font-size: 14px;
-}
-
-.keys-mode {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px;
-}
-
-.keys-mode .dim {
-  margin-right: 2px;
-}
-
-.creature-blurb {
-  margin: 4px 0 10px;
-  font-size: 13px;
-  color: var(--text-dim);
-  max-width: 62ch;
-}
-
 /* ---------- sing */
 .sing {
   display: grid;
@@ -795,14 +693,6 @@ button.ghost {
   align-items: center;
   gap: 18px;
   flex-wrap: wrap;
-}
-
-.transport .play {
-  min-width: 104px;
-}
-
-.transport .play.on {
-  background: #ffd15c;
 }
 
 .seq-grid {
@@ -1267,7 +1157,6 @@ body {
 
 /* ---------- buttons, chips */
 button.primary,
-button.ghost,
 .chip {
   appearance: none;
   background: transparent;
@@ -1296,7 +1185,6 @@ button.primary.large {
   padding: 10px 18px;
 }
 
-button.ghost:hover,
 .chip:hover {
   color: var(--text);
   border-color: var(--blue-dim);
@@ -1330,8 +1218,8 @@ button.ghost:hover,
 
 .right-play {
   grid-template-columns: minmax(0, 284fr) minmax(0, 58fr) minmax(0, 342fr);
-  grid-template-rows: minmax(min-content, 200fr) minmax(min-content, 200fr) auto minmax(min-content, 172fr);
-  grid-template-areas: "tube tube folds" "spec spec spec" "vowels voice voice" "keys keys keys";
+  grid-template-rows: auto minmax(min-content, 200fr) minmax(min-content, 200fr) auto minmax(min-content, 172fr);
+  grid-template-areas: "act act act" "tube tube folds" "spec spec spec" "vowels voice voice" "keys keys keys";
 }
 
 .s-tube { grid-area: tube; }
@@ -1340,6 +1228,168 @@ button.ghost:hover,
 .s-vowels { grid-area: vowels; }
 .s-voice { grid-area: voice; }
 .s-keys { grid-area: keys; }
+
+/* ---------- the action bar: each tab's one bright button, in the same place at the top of the
+   right column, with the few settings that belong beside it */
+.action-bar {
+  grid-area: act;
+  border-color: var(--blue-dim);
+}
+
+/* .right: above the narrow layouts' floors for every screen in the column, set further down */
+.right .action-bar .screen-body {
+  min-height: 0;
+  padding: 8px 12px;
+  gap: 6px;
+}
+
+.act-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+}
+
+/* amber: it makes sound */
+.act-primary {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+  padding: 9px 24px 9px 18px;
+  background: rgba(255, 179, 64, 0.08);
+  border: 1.5px solid var(--amber);
+  border-radius: 0;
+  color: #fff4dc;
+  font-family: var(--font);
+  font-weight: 400;
+  font-size: 17px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  text-shadow: 0 0 6px rgba(255, 179, 64, 0.55);
+  box-shadow: 0 0 10px rgba(255, 179, 64, 0.3), inset 0 0 8px rgba(255, 179, 64, 0.12);
+  cursor: pointer;
+}
+
+.act-primary:hover {
+  background: rgba(255, 179, 64, 0.14);
+}
+
+.act-primary.on {
+  background: rgba(255, 179, 64, 0.22);
+}
+
+.act-primary:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.act-icon {
+  flex: none;
+  width: 13px;
+  height: 15px;
+  background: var(--amber);
+}
+
+.act-icon.play {
+  clip-path: polygon(0 0, 100% 50%, 0 100%);
+}
+
+.act-icon.stop {
+  height: 13px;
+}
+
+.act-icon.breath {
+  height: 13px;
+  border-radius: 50%;
+}
+
+/* a creature's calls: several sound buttons side by side, the one sounding lit */
+.act-call {
+  min-height: 40px;
+  padding: 8px 14px 8px 11px;
+  gap: 8px;
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  background: transparent;
+  box-shadow: none;
+}
+
+.act-call .act-icon {
+  width: 9px;
+  height: 11px;
+}
+
+.act-call.on {
+  background: rgba(255, 179, 64, 0.2);
+  box-shadow: 0 0 10px rgba(255, 179, 64, 0.35);
+}
+
+.act-slider {
+  width: 200px;
+}
+
+.act-error {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.5;
+  letter-spacing: 0.06em;
+  color: var(--red);
+}
+
+/* a menu (a song, a pattern, what the keys play): a native select in the vector look */
+.menu {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  border: 1px solid var(--blue-dim);
+  background: #000;
+}
+
+.menu:hover,
+.menu:focus-within {
+  border-color: var(--blue);
+}
+
+.menu:has(select:focus-visible) {
+  outline: 2px solid var(--caliper);
+  outline-offset: 2px;
+}
+
+.menu-icon {
+  flex: none;
+  margin-left: 10px;
+  color: var(--blue);
+}
+
+.menu select {
+  appearance: none;
+  min-height: 34px;
+  padding: 6px 30px 6px 10px;
+  background: transparent url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 9 6'%3E%3Cpath d='M.5.5l4 4 4-4' fill='none' stroke='%234fb6f2' stroke-width='1.2'/%3E%3C/svg%3E") no-repeat right 11px center / 9px 6px;
+  border: 0;
+  border-radius: 0;
+  outline: none;
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.menu option {
+  background: #000;
+  color: var(--text);
+}
+
+.screen-tools .menu select {
+  min-height: 0;
+  padding: 2px 22px 2px 8px;
+  font-size: 9px;
+  background-position: right 7px center;
+}
 
 .midi-chip {
   max-width: 220px;
@@ -1491,30 +1541,6 @@ button.ghost:hover,
 }
 
 /* the start prompt, over the left screen */
-.start-prompt {
-  background: rgba(0, 0, 0, 0.88);
-  border: 1px solid var(--blue-dim);
-  border-radius: 0;
-  backdrop-filter: none;
-  max-width: 380px;
-  padding: 22px 26px;
-  box-shadow: 0 0 10px rgba(79, 182, 242, 0.15);
-}
-
-.start-prompt p {
-  font-size: 12px;
-  line-height: 1.6;
-  color: var(--text-dim);
-}
-
-.start-prompt .hint {
-  font-size: 11px;
-  color: var(--text-dim);
-}
-
-.start-prompt .error {
-  color: var(--red);
-}
 
 /* ---------- encoders (OP-1 style) */
 .enc-pages {
@@ -1726,7 +1752,6 @@ input[type="text"],
 
 .slider label,
 .toggle,
-.call-name,
 .pad-name,
 .specimen-name {
   text-transform: uppercase;
@@ -1790,7 +1815,7 @@ input[type="range"]::-moz-range-thumb {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     grid-template-rows: none;
     grid-auto-rows: auto;
-    grid-template-areas: "tube folds" "spec spec" "vowels vowels" "voice voice" "keys keys";
+    grid-template-areas: "act act" "tube folds" "spec spec" "vowels vowels" "voice voice" "keys keys";
   }
   .right-play .screen-body {
     min-height: 190px;
@@ -1812,7 +1837,7 @@ input[type="range"]::-moz-range-thumb {
   }
   .right-play {
     grid-template-columns: minmax(0, 1fr);
-    grid-template-areas: "tube" "folds" "spec" "vowels" "voice" "keys";
+    grid-template-areas: "act" "tube" "folds" "spec" "vowels" "voice" "keys";
   }
   .left .screen-body {
     min-height: 118vw;
@@ -1826,11 +1851,18 @@ input[type="range"]::-moz-range-thumb {
 /* ---------- Speak */
 .right-speak {
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  grid-template-rows: auto minmax(min-content, 236fr) auto minmax(min-content, 190fr);
-  grid-template-areas: "say say" "score score" "chart chart" "tube folds";
+  grid-template-rows: auto auto minmax(min-content, 236fr) auto minmax(min-content, 190fr);
+  grid-template-areas: "act act" "say say" "score score" "chart chart" "tube folds";
 }
 
 .s-say { grid-area: say; }
+
+/* the tube and folds' floor sets how tall the score is in a short window (rows of canvases share
+   by fr from their floors): lower, so the speak button above them fits a 1280 x 800 window */
+.right-speak .s-tube .screen-body,
+.right-speak .s-folds .screen-body {
+  min-height: 96px;
+}
 .s-score { grid-area: score; }
 .s-chart { grid-area: chart; }
 
@@ -1865,16 +1897,6 @@ input[type="range"]::-moz-range-thumb {
   box-shadow: 0 0 5px rgba(79, 182, 242, 0.25);
 }
 
-.say-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.say-actions button {
-  min-width: 84px;
-}
-
 .say .transcription {
   flex: 1;
   min-width: 0;
@@ -1886,20 +1908,6 @@ input[type="range"]::-moz-range-thumb {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.say-rate {
-  width: 170px;
-  flex: none;
-}
-
-.say-rate .slider label {
-  font-size: 9px;
-  margin: 0;
-}
-
-.say-rate input[type="range"] {
-  height: 12px;
 }
 
 .say .examples {
@@ -2027,7 +2035,7 @@ input[type="range"]::-moz-range-thumb {
 @media (max-width: 1100px) {
   .right-speak {
     grid-template-rows: none;
-    grid-template-areas: "say say" "score score" "chart chart" "tube folds";
+    grid-template-areas: "act act" "say say" "score score" "chart chart" "tube folds";
   }
   .right-speak .screen-body {
     min-height: 200px;
@@ -2040,16 +2048,13 @@ input[type="range"]::-moz-range-thumb {
 @media (max-width: 640px) {
   .right-speak {
     grid-template-columns: minmax(0, 1fr);
-    grid-template-areas: "say" "score" "chart" "tube" "folds";
+    grid-template-areas: "act" "say" "score" "chart" "tube" "folds";
   }
   .s-say .screen-body {
     min-height: 230px;
   }
   .say-row {
     flex-wrap: wrap;
-  }
-  .say-actions {
-    flex-direction: row;
   }
   /* room to wrap here, rather than cut the transcription short */
   .say .transcription {
@@ -2058,10 +2063,12 @@ input[type="range"]::-moz-range-thumb {
 }
 
 /* ---------- Sing */
+/* the pitch roll only shows what was sung: a smaller share than it had, so the song's button
+   above it fits a 1280 x 800 window and the keys keep their room */
 .right-sing {
   grid-template-columns: minmax(0, 342fr) minmax(0, 342fr);
-  grid-template-rows: minmax(min-content, 320fr) auto auto minmax(min-content, 172fr);
-  grid-template-areas: "roll roll" "lyrics lyrics" "spec voice" "keys keys";
+  grid-template-rows: auto minmax(min-content, 240fr) auto auto minmax(min-content, 172fr);
+  grid-template-areas: "act act" "roll roll" "lyrics lyrics" "spec voice" "keys keys";
 }
 
 .s-roll { grid-area: roll; }
@@ -2071,22 +2078,16 @@ input[type="range"]::-moz-range-thumb {
   height: 100%;
 }
 
-.demo-songs {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-}
-
-.demo-songs .chip {
-  padding: 2px 8px;
-  font-size: 9px;
-}
-
 .lyrics {
   padding: 6px 14px 10px;
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
   gap: 8px;
+}
+
+/* as tall as the words: the song's button above took the room the old floor held empty */
+.s-lyrics .screen-body {
+  min-height: 0;
 }
 
 .lyrics textarea {
@@ -2171,7 +2172,7 @@ input[type="range"]::-moz-range-thumb {
 @media (max-width: 1100px) {
   .right-sing {
     grid-template-rows: none;
-    grid-template-areas: "roll roll" "lyrics lyrics" "spec voice" "keys keys";
+    grid-template-areas: "act act" "roll roll" "lyrics lyrics" "spec voice" "keys keys";
   }
   .right-sing .screen-body {
     min-height: 190px;
@@ -2187,15 +2188,15 @@ input[type="range"]::-moz-range-thumb {
 @media (max-width: 640px) {
   .right-sing {
     grid-template-columns: minmax(0, 1fr);
-    grid-template-areas: "roll" "lyrics" "spec" "voice" "keys";
+    grid-template-areas: "act" "roll" "lyrics" "spec" "voice" "keys";
   }
 }
 
 /* ---------- Beatbox */
 .right-beatbox {
   grid-template-columns: minmax(0, 392fr) minmax(0, 292fr);
-  grid-template-rows: minmax(min-content, 236fr) minmax(min-content, 176fr) auto auto;
-  grid-template-areas: "seq seq" "wf wf" "pads transport" "keys keys";
+  grid-template-rows: auto minmax(min-content, 236fr) minmax(min-content, 176fr) auto auto;
+  grid-template-areas: "act act" "seq seq" "wf wf" "pads transport" "keys keys";
 }
 
 .s-seq { grid-area: seq; }
@@ -2374,20 +2375,6 @@ input[type="range"]::-moz-range-thumb {
   margin: 0;
 }
 
-.transport-top {
-  display: flex;
-  gap: 6px;
-  align-items: center;
-}
-
-.transport-top .play.on {
-  background: transparent;
-  border-color: var(--amber);
-  color: var(--amber);
-  box-shadow: 0 0 6px rgba(255, 179, 64, 0.4);
-  text-shadow: 0 0 3px rgba(255, 179, 64, 0.6);
-}
-
 .transport-encoders {
   display: flex;
   flex-direction: column;
@@ -2403,17 +2390,6 @@ input[type="range"]::-moz-range-thumb {
 
 .s-transport .enc-value {
   font-size: 22px;
-}
-
-.transport .presets {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-}
-
-.transport .presets .chip {
-  padding: 2px 7px;
-  font-size: 9px;
 }
 
 .transport .sbn {
@@ -2492,7 +2468,7 @@ input[type="range"]::-moz-range-thumb {
   .right-beatbox {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     grid-template-rows: none;
-    grid-template-areas: "seq seq" "wf wf" "pads transport" "keys keys";
+    grid-template-areas: "act act" "seq seq" "wf wf" "pads transport" "keys keys";
   }
   .right-beatbox .screen-body {
     min-height: 200px;
@@ -2512,7 +2488,7 @@ input[type="range"]::-moz-range-thumb {
 @media (max-width: 640px) {
   .right-beatbox {
     grid-template-columns: minmax(0, 1fr);
-    grid-template-areas: "seq" "wf" "pads" "transport" "keys";
+    grid-template-areas: "act" "seq" "wf" "pads" "transport" "keys";
   }
   .beat-overlay {
     top: 10px;
@@ -2520,14 +2496,15 @@ input[type="range"]::-moz-range-thumb {
 }
 
 /* ---------- Bestiary */
+/* the calls take the top (the action bar), so the waterfall and the airway share a row to keep
+   the column the height it was */
 .right-bestiary {
   grid-template-columns: minmax(0, 342fr) minmax(0, 342fr);
-  grid-template-rows: minmax(min-content, 196fr) minmax(min-content, 196fr) auto minmax(min-content, 150fr) auto;
-  grid-template-areas: "gallery gallery" "wf wf" "calls cparams" "airway airway" "keys keys";
+  grid-template-rows: auto minmax(min-content, 196fr) minmax(min-content, 196fr) auto auto;
+  grid-template-areas: "act act" "gallery gallery" "wf airway" "cparams cparams" "keys keys";
 }
 
 .s-gallery { grid-area: gallery; }
-.s-calls { grid-area: calls; }
 .s-cparams { grid-area: cparams; }
 .s-airway { grid-area: airway; }
 
@@ -2599,89 +2576,6 @@ input[type="range"]::-moz-range-thumb {
   max-width: 100%;
 }
 
-.calls-body {
-  position: absolute;
-  inset: 0;
-  padding: 4px 14px 10px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  overflow-y: auto;
-}
-
-.calls-body .calls {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
-}
-
-.calls-body .call {
-  background: transparent;
-  border: 1px solid var(--frame);
-  border-radius: 0;
-  padding: 4px 10px;
-  color: var(--text);
-  text-align: left;
-  cursor: pointer;
-}
-
-.calls-body .call:hover {
-  border-color: var(--blue-dim);
-  color: var(--text);
-}
-
-.calls-body .call-name {
-  font-size: 10px;
-  font-weight: 300;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-}
-
-.calls-body .call.playing {
-  border-color: var(--amber);
-  color: var(--amber);
-  box-shadow: 0 0 6px rgba(255, 179, 64, 0.45);
-  text-shadow: 0 0 3px rgba(255, 179, 64, 0.6);
-}
-
-.calls-body .call.playing .call-name {
-  color: var(--amber);
-}
-
-.calls-body .call.sustain.on {
-  border-color: var(--blue);
-  color: var(--text);
-  background: transparent;
-}
-
-.calls-body .keys-mode {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  align-items: center;
-}
-
-.calls-body .keys-mode .dim {
-  font-size: 8px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--text-dim);
-  margin-right: 4px;
-}
-
-.calls-body .keys-mode .chip {
-  padding: 2px 7px;
-  font-size: 9px;
-}
-
-.calls-body .creature-blurb {
-  margin: 0;
-  font-size: 10px;
-  line-height: 1.5;
-  letter-spacing: 0.04em;
-  color: var(--text-dim);
-}
-
 .cparams-role {
   margin: 2px 14px 0;
   font-size: 9px;
@@ -2699,7 +2593,7 @@ input[type="range"]::-moz-range-thumb {
 @media (max-width: 1100px) {
   .right-bestiary {
     grid-template-rows: none;
-    grid-template-areas: "gallery gallery" "wf wf" "calls cparams" "airway airway" "keys keys";
+    grid-template-areas: "act act" "gallery gallery" "wf wf" "cparams cparams" "airway airway" "keys keys";
   }
   .right-bestiary .screen-body {
     min-height: 190px;
@@ -2715,7 +2609,7 @@ input[type="range"]::-moz-range-thumb {
 @media (max-width: 640px) {
   .right-bestiary {
     grid-template-columns: minmax(0, 1fr);
-    grid-template-areas: "gallery" "wf" "calls" "cparams" "airway" "keys";
+    grid-template-areas: "act" "gallery" "wf" "cparams" "airway" "keys";
   }
   .s-gallery .specimens {
     grid-template-columns: repeat(2, minmax(0, 1fr));

@@ -16,7 +16,7 @@
  *
  * Opt-outs, for things meant to sit on top of other things:
  *  - data-layout="overlay" on an element: it and its contents are exempt from overlap checks
- *    (the start prompt and the beat letter float over the face on purpose)
+ *    (the beat letter floats over the face on purpose)
  *  - data-layout="layered" on an element: its contents may overlap each other, but not anything
  *    outside it (piano keys: the black keys sit on the white ones)
  *  - data-layout="scatter" on a canvas: its text may overlap other text on the same canvas
@@ -330,8 +330,11 @@ async function main() {
       await mode(m);
       await check(m);
     }
-    await page.locator(".topbar button.primary").click();
+    // each tab's main button starts the audio: Play's breathes (then stop breathing)
+    await mode("play");
+    await page.getByRole("button", { name: /^Breathe$/ }).click();
     await page.waitForSelector(".load", { timeout: 15000 });
+    await page.getByRole("button", { name: /^Stop$/ }).click();
     for (const m of modes) {
       await mode(m);
       await check(`${m} (running)`);

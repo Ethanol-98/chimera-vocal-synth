@@ -1,9 +1,11 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useStore } from "../store.ts";
 import { useSing, playDemo, stopSinging, soundingSyllable, sungNow, DEMO_SONGS, ensureDictionary } from "../singing.ts";
 import { mouthWords } from "../mouthWords.ts";
 import { V } from "../colors.ts";
 import { Keys, MidiButton } from "./Keys.tsx";
+import { ActionBar, PrimaryButton } from "./ActionBar.tsx";
+import { Menu } from "./Controls.tsx";
 import { PianoRoll } from "./PianoRoll.tsx";
 import { SpectrumView } from "./SpectrumView.tsx";
 import { Chip, Screen } from "./Screen.tsx";
@@ -112,32 +114,32 @@ function SongControls() {
   );
 }
 
-function DemoSongs() {
-  const body = useStore((s) => s.body);
+/** Sing's main button: sing the chosen song (its own words), or stop it. */
+function SingActions() {
   const start = useStore((s) => s.start);
   const demo = useSing((s) => s.demo);
+  const [song, setSong] = useState(DEMO_SONGS[0].name);
+  // playDemo waits for the audio itself, so a stop meanwhile (body, mode) cancels it
+  const sing = (name: string) => void playDemo(name, useStore.getState().body, start);
+  const press = () => (demo ? stopSinging() : sing(song));
   return (
-    <div className="demo-songs" role="group" aria-label="Demo songs">
-      {DEMO_SONGS.map((s) => (
-        <Chip
-          key={s.name}
-          on={demo === s.name}
-          onClick={async () => {
-            if (demo === s.name) {
-              stopSinging();
-              return;
-            }
-            await playDemo(s.name, body, start);
-          }}
-        >
-          {demo === s.name ? `Stop “${s.name}”` : s.name}
-        </Chip>
-      ))}
-    </div>
+    <ActionBar label="Song" onSpace={press}>
+      <PrimaryButton label="Sing" playing={!!demo} onClick={press} />
+      <Menu
+        label="Song"
+        icon="note"
+        value={demo ?? song}
+        options={DEMO_SONGS.map((s) => ({ value: s.name, label: s.name }))}
+        onChange={(name) => {
+          setSong(name);
+          if (demo) sing(name);
+        }}
+      />
+    </ActionBar>
   );
 }
 
-/** Sing mode's right column: the piano roll, the lyrics, the spectrum with the ring, the song voice, the keys. */
+/** Sing mode's right column: the song button, the pitch roll, the lyrics, the spectrum with the ring, the song voice, the keys. */
 export function SingRight() {
   // the pronouncing dictionary for the lyrics: here rather than on the mode switch, since the app
   // opens on Sing without one
@@ -146,10 +148,11 @@ export function SingRight() {
   const next = useSing((s) => (s.demo ? null : (s.syllables[s.cursor]?.text ?? null)));
   return (
     <div className="right right-sing">
-      <Screen className="s-roll" title="Piano roll" sub="Notes and the pitch sung">
+      <SingActions />
+      <Screen className="s-roll" title="Pitch">
         <PianoRoll />
       </Screen>
-      <Screen className="s-lyrics" title="Lyrics" sub="Each note sings the next syllable" tools={<DemoSongs />}>
+      <Screen className="s-lyrics" title="Lyrics">
         <Lyrics />
       </Screen>
       <Screen className="s-spec" title="Spectrum" sub={ring ? "Ring on" : ""}>

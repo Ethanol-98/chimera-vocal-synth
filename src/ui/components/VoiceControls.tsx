@@ -1,6 +1,5 @@
 import { useStore } from "../store.ts";
 import { EncoderPages, type EncoderPage } from "./Encoder.tsx";
-import { Chip } from "./Screen.tsx";
 
 const NOTE = ["C", "C♯", "D", "D♯", "E", "F", "F♯", "G", "G♯", "A", "A♯", "B"];
 export const noteName = (f: number) => {
@@ -71,22 +70,4 @@ export function VoiceControls() {
     },
   ];
   return <EncoderPages label="Voice" pages={pages} />;
-}
-
-/** Hold breath and Whisper, for the voice screen's header. */
-export function VoiceToggles() {
-  const voiced = useStore((st) => st.source.voiced);
-  const setSource = useStore((st) => st.setSource);
-  const hold = useStore((st) => st.hold);
-  const setHold = useStore((st) => st.setHold);
-  return (
-    <>
-      <Chip on={hold} onClick={() => setHold(!hold)}>
-        Hold breath
-      </Chip>
-      <Chip on={!voiced} onClick={() => setSource({ voiced: !voiced })}>
-        Whisper
-      </Chip>
-    </>
-  );
 }

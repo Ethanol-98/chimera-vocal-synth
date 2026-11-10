@@ -41,21 +41,22 @@ A hook, `usePhosphor(draw)`, replaces `useCanvasLoop` for the vector screens: DP
 - **Pages of four.** An encoder screen shows four and pages through the rest:
   - Play: VOICE (pitch, breath, pressed, vibrato), TONE (breathy, rough, fry, glide), MOUTH (lip round, lip open, protrude, jaw), THROAT (tongue root, tip curl, velum, larynx), LARYNX (twang, false folds).
   - Sing: vibrato depth, rate, breathy, ring. Beatbox: tempo, swing, mic, bass note. Bestiary: the creature's params, four per page.
-- **Chips** replace toggles and segmented buttons: a framed caps label, lit when on. Mode and body tabs are chips in the top bar.
+- **Chips** replace toggles and segmented buttons: a framed caps label, lit when on. Mode tabs are chips in the top bar; the body's (and its triangle) are in the face screen's header.
 - **View options** (pressure, airflow, measurements, grid) become chips in the face screen's corner.
-- **Start prompt** becomes a framed overlay on the left screen with one lit chip ("BREATHE IN AND START").
+- **One main button per mode** (`ActionBar`), in the same place: the top of the right column, amber (it makes sound), with the few settings that belong beside it. It also starts the audio, so there is no start prompt; it reads Stop while its sound plays, and Space presses it unless the focus is in a field or on another control.
+- **The whole head** is always drawn: the crown and the back of the skull are never cropped (`HEAD` in `render/anatomy.ts`).
 
 ## Screens per mode
 
 | Mode | Left | Right column |
 |---|---|---|
-| Play | face (`AnatomyView`) | tube, vocal folds, spectrum, vowels, voice encoders, keys |
-| Speak | face | say (text field, chips, transcription), gestural score, consonant chart, tube, vocal folds |
-| Sing | face | piano roll, lyrics chips, spectrum with the ring zone, song encoders, keys |
-| Beatbox | face with the hit's big symbol | step sequencer, waterfall spectrogram, pads, transport encoders + presets, compact keys |
-| Bestiary | creature (`CreatureView`) | creature gallery, waterfall spectrogram, calls, creature encoders, unrolled airway, compact keys |
+| Play | face (`AnatomyView`) | Breathe + Whisper; tube, vocal folds, spectrum, vowels, voice encoders, keys |
+| Speak | face | Speak + rate + IPA; say (text field, transcription, examples), gestural score, consonant chart, tube, vocal folds |
+| Sing | face | Sing + song menu; pitch roll, lyrics chips, spectrum with the ring zone, song encoders, keys |
+| Beatbox | face with the hit's big symbol | Play beat + pattern menu + Mic FX; step sequencer, waterfall spectrogram, pads, tempo encoders + the beat as text, bass keys |
+| Bestiary | creature (`CreatureView`, its description under its name) | the calls + Breathe; creature gallery, waterfall spectrogram and unrolled airway, creature encoders, compact keys |
 
-`Keys` also owns the computer-keyboard listeners and the MIDI connect button, so every mode that has keys today keeps at least a compact keys strip. (Speak never had them: it plays text, not notes.)
+`Keys` also owns the computer-keyboard listeners, and `MidiButton` is a chip in each keys screen's header, so every mode that has keys today keeps at least a compact keys strip. (Speak never had them: it plays text, not notes.)
 
 The mockup generator (`docs/mockups/gen/`) is the reference implementation for each drawing: the same geometry, colours and layout rules, written against the live data the app already has (`HumanFrame`, telemetry, transfer functions, plans, creature visuals).
 

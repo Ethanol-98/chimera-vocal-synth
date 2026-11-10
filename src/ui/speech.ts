@@ -80,6 +80,15 @@ export function stopSpeaking(): void {
   if (current) cutId = current.id;
 }
 
+/** Whether an utterance is sounding: scheduled (or waiting for the worklet) and not over or stopped. */
+export function speakingNow(): boolean {
+  const p = current;
+  if (!p || p.id === cutId) return false;
+  const t = engine.voiceClock();
+  if (p.offset === null || t === null) return true;
+  return t - p.offset < p.plan.end;
+}
+
 /** The word being spoken now (null between words and once the speech is over or stopped). */
 export function spokenWordNow(): { key: string; text: string } | null {
   const p = current;
