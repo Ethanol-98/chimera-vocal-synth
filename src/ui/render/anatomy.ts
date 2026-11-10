@@ -78,8 +78,13 @@ interface Echo {
 
 const ECHO_AGES = [0.09, 0.06, 0.03];
 
-/** top of the cranium in body cm (profile.ts's skin outline peaks at 22.9), with a little air */
-const CROWN = 23.4;
+/**
+ * The whole head in body cm, drawn on every screen: the head is the instrument's face, so the
+ * crown and the back of the skull are never cut off. profile.ts's skin outline peaks at 22.9 cm
+ * and reaches back to -8.7 cm; each bound has a little air. (VIEW, profile.ts's tighter crop
+ * around the airway, is the duet page's.)
+ */
+const HEAD = { x0: -9.4, x1: VIEW.x1, y0: VIEW.y0, y1: 23.5 };
 
 const smoothstep = (a: number, b: number, x: number): number => {
   const t = Math.max(0, Math.min(1, (x - a) / (b - a)));
@@ -168,15 +173,12 @@ export class AnatomyRenderer {
     // A tall desktop screen keeps them beside it: the head is then fitted to the width and centred,
     // leaving room above and below, where the compact rows ran over the skull.
     this.compact = w < 560;
-    const padX = 12, padT = this.compact ? 62 : 8, padB = this.compact ? 92 : 8;
-    // VIEW crops the top of the skull at the canvas edge; with readout rows above the head, the
-    // whole crown must fit under them, or the cut-off part draws over the readouts
-    const y1 = this.compact ? CROWN : VIEW.y1;
-    this.scale = Math.max(1, Math.min((w - 2 * padX) / (VIEW.x1 - VIEW.x0), (h - padT - padB) / (y1 - VIEW.y0)));
+    const padX = 12, padT = this.compact ? 62 : 10, padB = this.compact ? 92 : 8;
+    this.scale = Math.max(1, Math.min((w - 2 * padX) / (HEAD.x1 - HEAD.x0), (h - padT - padB) / (HEAD.y1 - HEAD.y0)));
     // left-aligned when there is room to spare, so the readouts get the space in front of the face
-    const spare = w - 2 * padX - (VIEW.x1 - VIEW.x0) * this.scale;
-    this.ox = padX + (this.compact ? spare / 2 : Math.min(spare / 2, Math.max(0, spare - 220))) - VIEW.x0 * this.scale;
-    this.oy = padT + Math.max(0, (h - padT - padB - (y1 - VIEW.y0) * this.scale) / 2) + y1 * this.scale;
+    const spare = w - 2 * padX - (HEAD.x1 - HEAD.x0) * this.scale;
+    this.ox = padX + (this.compact ? spare / 2 : Math.min(spare / 2, Math.max(0, spare - 220))) - HEAD.x0 * this.scale;
+    this.oy = padT + Math.max(0, (h - padT - padB - (HEAD.y1 - HEAD.y0) * this.scale) / 2) + HEAD.y1 * this.scale;
     for (const p of this.particles) p.px = NaN;
   }
 
