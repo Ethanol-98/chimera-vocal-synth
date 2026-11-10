@@ -64,9 +64,18 @@ export class AudioEngine {
     const ctx = new AudioContext({ latencyHint: "interactive", sampleRate: 48000 });
     this.ctx = ctx;
     this.sampleRate = ctx.sampleRate;
-    await ctx.audioWorklet.addModule(workletUrl);
-    // the worklet instantiates the engine from the module compiled at startup (main.tsx)
-    const node = new AudioWorkletNode(ctx, "chimera", { numberOfInputs: 0, numberOfOutputs: 1, outputChannelCount: [2], processorOptions: { module: chimeraModule() } });
+    let node: AudioWorkletNode;
+    try {
+      await ctx.audioWorklet.addModule(workletUrl);
+      // the worklet instantiates the engine from the module compiled at startup (main.tsx)
+      node = new AudioWorkletNode(ctx, "chimera", { numberOfInputs: 0, numberOfOutputs: 1, outputChannelCount: [2], processorOptions: { module: chimeraModule() } });
+    } catch (e) {
+      // without its worklet the context is empty: forget it, so a retry builds the graph again
+      // instead of resuming a context with nothing in it (and reporting that the audio started)
+      this.ctx = null;
+      void ctx.close().catch(() => {});
+      throw e;
+    }
     this.node = node;
     const master = ctx.createGain();
     master.gain.value = 0.8;

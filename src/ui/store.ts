@@ -315,11 +315,12 @@ export const useStore = create<State>((set, get) => ({
   },
   toggleBreath: async () => {
     if (get().hold) return get().setHold(false);
-    const mode = get().mode;
+    // on at once, so a second press while the audio starts turns it off again; switching tabs
+    // meanwhile clears it as any switch does (setMode)
+    get().setHold(true);
     await get().start();
-    // not if the audio failed to start, nor in a tab switched to meanwhile (Sing and Speak breathe
-    // by themselves, and a held breath would drone under them)
-    if (get().started && get().mode === mode) get().setHold(true);
+    // the audio didn't start: nothing breathes, so the button offers Breathe (a retry) again
+    if (!get().started) get().setHold(false);
   },
   noteOn: (midi, velocity = 96) => {
     const held = get().heldNotes.filter((n) => n !== midi).concat(midi);

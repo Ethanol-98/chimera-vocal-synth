@@ -235,6 +235,37 @@ async function run(viewport: { width: number; height: number }, tag: string) {
   await page.close();
 }
 
+// a start that failed (the worklet didn't load) can be retried from the same button: the retry
+// builds the audio again instead of resuming the empty context and reporting success
+{
+  const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+  page.on("pageerror", (e) => errors.push(`[retry] pageerror: ${e.message}`));
+  // the worklet's fetch isn't the page's (route() never sees it): fail the first addModule instead
+  await page.addInitScript(() => {
+    const add = AudioWorklet.prototype.addModule;
+    let calls = 0;
+    AudioWorklet.prototype.addModule = function (this: AudioWorklet, ...a: Parameters<typeof add>) {
+      (window as unknown as { __worklets: number }).__worklets = ++calls;
+      return calls === 1 ? Promise.reject(new Error("worklet blocked by the test")) : add.apply(this, a);
+    };
+  });
+  await page.goto(url, { waitUntil: "networkidle" });
+  await page.getByRole("radio", { name: "Play" }).click();
+  await page.getByRole("button", { name: /^Breathe$/ }).click();
+  const failed = await page.getByText(/Audio could not start/).waitFor({ timeout: 10000 }).then(() => true, () => false);
+  await page.getByRole("button", { name: /^Breathe$/ }).click();
+  await page.waitForTimeout(1500);
+  const running = await page.evaluate(() => {
+    // @ts-expect-error debug handle
+    return !!window.__chimeraEngine?.latest;
+  });
+  const worklets = await page.evaluate(() => (window as unknown as { __worklets?: number }).__worklets ?? 0);
+  logs.push(`[retry] first start failed: ${failed}, worklet requests ${worklets}, running after retry: ${running}`);
+  if (!failed) errors.push("[retry] blocking the worklet didn't make the first start fail");
+  if (!running) errors.push(`[retry] the retry after a failed start didn't start the audio (${worklets} worklet requests)`);
+  await page.close();
+}
+
 // the very first key in Sing mode, before audio has started, still sings once audio is up
 {
   const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
@@ -283,6 +314,6 @@ await run({ width: 1440, height: 980 }, "desktop");
 await run({ width: 390, height: 844 }, "mobile");
 await browser.close();
 console.log("console errors:", errors.length ? "\n" + errors.join("\n") : "none");
-console.log(logs.filter((l) => /load|rate|warn|transcription|creature|held|back to|beatbox|silence|sing|octave/i.test(l)).slice(0, 48).join("\n"));
+console.log(logs.filter((l) => /load|rate|warn|transcription|creature|held|back to|beatbox|silence|sing|octave|retry/i.test(l)).slice(0, 52).join("\n"));
 // a run that collected errors fails, so CI and agents can't read it as a pass
 if (errors.length) process.exit(1);

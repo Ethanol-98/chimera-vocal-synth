@@ -138,7 +138,12 @@ function SingActions() {
       .catch(() => {})
       .finally(() => request.current === n && setPending(false));
   };
-  const press = () => (demo || pending ? stopSinging() : sing(song));
+  const stop = () => {
+    request.current++; // the song getting ready, if any, no longer counts
+    setPending(false);
+    stopSinging();
+  };
+  const press = () => (demo || pending ? stop() : sing(song));
   return (
     <ActionBar label="Song" onSpace={press}>
       <PrimaryButton label="Sing" playing={!!demo || pending} onClick={press} />
