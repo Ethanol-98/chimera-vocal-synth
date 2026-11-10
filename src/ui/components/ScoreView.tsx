@@ -3,8 +3,8 @@ import { usePhosphor } from "../usePhosphor.ts";
 import { engine } from "../../audio/AudioEngine.ts";
 import { currentPlan, onPlan, type SpokenPlan } from "../speech.ts";
 import { activation, type Gesture } from "../../wasm/engine.ts";
-import { TEXT, V } from "../colors.ts";
-import { beam, beamPts, blockLineH, label, labelBlock, seg, wrapLabel, type Pt } from "../render/vector.ts";
+import { core, TEXT, V } from "../colors.ts";
+import { beam, beamPts, blockLineH, label, labelBlock, labelWidth, seg, wrapLabel, type LabelOpts, type Pt } from "../render/vector.ts";
 
 /** rows of the score, coloured like the articulators on the face (lips pink, tongue green, soft palate white, glottis amber) */
 const ROWS: { name: string; keys: string[]; color: string }[] = [
@@ -14,6 +14,13 @@ const ROWS: { name: string; keys: string[]; color: string }[] = [
   { name: "Soft palate", keys: ["velum"], color: V.white },
   { name: "Glottis", keys: ["abduction", "closure"], color: V.amber },
 ];
+
+/**
+ * the score's text: medium weight in a light tint of each row's colour. Thin strokes in the line
+ * colours (at 9 px, 85%) all but vanished, worst on a phone
+ */
+const NAME: LabelOpts = { size: 10, weight: "m", ls: 0.14 };
+const GESTURE: LabelOpts = { size: 10, weight: "m", align: "center", ls: 0.08 };
 
 function rowOf(g: Gesture): number {
   const keys = Object.keys(g.targets);
@@ -37,10 +44,12 @@ export function ScoreView() {
   useEffect(() => onPlan((p) => (planRef.current = p)), []);
   const ref = usePhosphor(({ ctx, w, h }) => {
     const sp = planRef.current;
-    const left = 104, right = w - 14, top = 18, bottom = h - 26;
+    // the rows start right after the longest name
+    const left = 14 + Math.max(...ROWS.map((r) => labelWidth(ctx, r.name.toUpperCase(), NAME))) + 14;
+    const right = w - 14, top = 18, bottom = h - 26;
     const rowH = (bottom - top) / (ROWS.length + 1);
-    ROWS.forEach((r, i) => label(ctx, r.name.toUpperCase(), 14, top + rowH * (i + 0.62), { size: 9, color: r.color, ls: 0.16, alpha: 0.85 }));
-    label(ctx, "PITCH", 14, top + rowH * (ROWS.length + 0.62), { size: 9, color: V.amber, ls: 0.16, alpha: 0.85 });
+    ROWS.forEach((r, i) => label(ctx, r.name.toUpperCase(), 14, top + rowH * (i + 0.62), { ...NAME, color: core(r.color) }));
+    label(ctx, "PITCH", 14, top + rowH * (ROWS.length + 0.62), { ...NAME, color: core(V.amber) });
     for (let i = 1; i <= ROWS.length + 1; i++) seg(ctx, left, top + rowH * i, right, top + rowH * i, V.frame, 1);
     if (!sp) {
       // on black over the rules, wrapped to the score's width
@@ -75,9 +84,10 @@ export function ScoreView() {
       p.lineTo(xb, yt);
       p.lineTo(x1, yb);
       beam(ctx, p, ROWS[r].color, act > 0.05 ? 1.5 : 1.1, { alpha: act > 0.05 ? 0.6 + 0.4 * act : isVowel ? 0.42 : 0.75, hot: act > 0.5 });
-      if (g.label && xb - xa > 10) {
-        const lbl = g.label === "aspiration" || g.label === "voiceless" ? "OPEN" : g.label === "velum" ? "LOWERED" : g.label;
-        label(ctx, lbl, (xa + xb) / 2, yb - 4, { size: 10, color: ROWS[r].color, align: "center", ls: 0.08, alpha: isVowel && act < 0.05 ? 0.6 : 1 });
+      const lbl = g.label === "aspiration" || g.label === "voiceless" ? "OPEN" : g.label === "velum" ? "LOWERED" : g.label;
+      // only inside its own trapezoid (a wider label ran over the sides and its neighbours)
+      if (lbl && labelWidth(ctx, lbl, GESTURE) <= x1 - x0 - 6) {
+        label(ctx, lbl, (xa + xb) / 2, yb - 4, { ...GESTURE, color: core(ROWS[r].color), alpha: isVowel && act < 0.05 ? 0.75 : 1 });
       }
     }
     // the pitch contour
@@ -88,7 +98,7 @@ export function ScoreView() {
       const pts: Pt[] = f0s.map((q) => [X(q.t), yb - ((q.f - fmin) / Math.max(1, fmax - fmin)) * (yb - ya)]);
       beamPts(ctx, pts, V.amber, 1.3);
       const lastP = pts[pts.length - 1];
-      label(ctx, `${Math.round(f0s[f0s.length - 1].f)} HZ`, lastP[0] + 6, lastP[1] + 3, { size: 9, color: V.amber, ls: 0.1 });
+      label(ctx, `${Math.round(f0s[f0s.length - 1].f)} HZ`, lastP[0] + 6, lastP[1] + 3, { size: 10, color: core(V.amber), weight: "m", ls: 0.1 });
     }
     // segments along the bottom
     let lastRight = -Infinity;
