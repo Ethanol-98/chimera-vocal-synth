@@ -1,6 +1,13 @@
 //! English text → phoneme segments: CMUdict (ARPAbet with stress) when loaded, letter-to-sound
 //! rules otherwise; American flapping and dark /l/; numbers spelled out; punctuation → phrase
 //! breaks and intonation.
+//!
+//! [`normalize_speech`] runs first and rewrites money, times, dates, symbols, abbreviations and
+//! URLs into dictionary words. Bare integers below a million stay for [`expand_numbers`], which
+//! is the spelling the phonetics goldens lock down.
+
+mod normalize;
+pub use normalize::normalize_speech;
 
 use super::syllables::WordSource;
 use super::{Intonation, Segment};
@@ -131,7 +138,9 @@ impl EnglishG2P {
     /// Text → phrases of segments.
     pub fn to_phrases(&self, text: &str) -> Vec<Phrase> {
         let mut phrases: Vec<Phrase> = Vec::new();
-        let normalized = expand_numbers(&text.replace('’', "'"));
+        // Curly apostrophes, money, times, "Dr." and URLs become words here. Digits that remain
+        // are the plain integers expand_numbers already spelled the same way.
+        let normalized = expand_numbers(&normalize_speech(text));
         // split on phrase punctuation, keeping the delimiter
         let parts = split_keeping(&normalized, is_phrase_punct);
         let mut words: Vec<String> = Vec::new();
