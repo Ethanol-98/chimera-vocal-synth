@@ -213,6 +213,19 @@ export class AudioEngine {
     if (this.master && this.ctx) this.master.gain.setTargetAtTime(v, this.ctx.currentTime, 0.02);
   }
 
+  /** Hear the same mix the speakers get. The voice itself is not in this path. */
+  tapOutput(node: AudioNode): () => void {
+    if (!this.master) throw new Error("The voice hasn't started");
+    this.master.connect(node);
+    return () => {
+      try {
+        this.master?.disconnect(node);
+      } catch {
+        // already disconnected
+      }
+    };
+  }
+
   setBody(body: BodyMix): void {
     this.send({ type: "body", body });
   }

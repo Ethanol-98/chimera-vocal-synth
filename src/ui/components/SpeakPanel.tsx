@@ -11,6 +11,7 @@ import { Stroboscope } from "./Stroboscope.tsx";
 import type { InfoFn, SlotsFn } from "./AnatomyView.tsx";
 import { V } from "../colors.ts";
 import { engine } from "../../audio/AudioEngine.ts";
+import { exportSpeak } from "../exportMp4.ts";
 
 const EXAMPLES = ["Hello. Can you hear me?", "She sells sea shells by the sea shore.", "Every sound here is air moving through a throat.", "The quick brown fox jumps over the lazy dog."];
 
@@ -121,17 +122,33 @@ export function SpeakRight() {
   const [ipa, setIpa] = useState(false);
   const [rate, setRate] = useState(1);
   const [busy, setBusy] = useState(false);
+  const [rendering, setRendering] = useState(false);
+  const [mp4, setMp4] = useState("");
   const [trans, setTrans] = useState(currentPlan()?.transcription ?? "");
   const [vowel, setVowel] = useState("ɑ");
   useEffect(() => onPlan((p) => setTrans(p?.transcription ?? "")), []);
 
   const speak = async () => {
+    setMp4("");
     setBusy(true);
     try {
       await start();
       await speakText(text, { ipa, body, rate, f0 });
     } finally {
       setBusy(false);
+    }
+  };
+  const renderMp4 = async () => {
+    setRendering(true);
+    setMp4("Rendering MP4…");
+    try {
+      await start();
+      await exportSpeak({ text, ipa, body, rate, f0 });
+      setMp4("Saved chimera-speak.mp4");
+    } catch (e) {
+      setMp4(e instanceof Error ? e.message : "Couldn't render the MP4");
+    } finally {
+      setRendering(false);
     }
   };
   const pad = async (c: string) => {
@@ -141,7 +158,19 @@ export function SpeakRight() {
 
   return (
     <div className="right right-speak">
-      <Screen className="s-say" title="Say" sub="Text to speech" tools={<Toggle label="Text is IPA" checked={ipa} onChange={setIpa} />}>
+      <Screen
+        className="s-say"
+        title="Say"
+        sub={mp4 || "Text to speech"}
+        tools={
+          <>
+            <Chip toggle={false} onClick={() => void renderMp4()} disabled={busy || rendering}>
+              {rendering ? "Rendering…" : "Render MP4"}
+            </Chip>
+            <Toggle label="Text is IPA" checked={ipa} onChange={setIpa} />
+          </>
+        }
+      >
         <div className="say">
           <div className="say-row">
             <textarea
@@ -157,7 +186,7 @@ export function SpeakRight() {
               placeholder={ipa ? "Type IPA, for example ˈhɛloʊ" : "Type something for the voice to say"}
             />
             <div className="say-actions">
-              <button className="primary" onClick={() => void speak()} disabled={busy}>
+              <button className="primary" onClick={() => void speak()} disabled={busy || rendering}>
                 {busy ? "Preparing…" : "Speak"}
               </button>
               <button className="ghost" onClick={stopSpeaking}>
