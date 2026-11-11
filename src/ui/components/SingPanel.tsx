@@ -1,6 +1,7 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useStore } from "../store.ts";
 import { useSing, playDemo, stopSinging, soundingSyllable, sungNow, DEMO_SONGS, ensureDictionary } from "../singing.ts";
+import { exportDemo } from "../exportMp4.ts";
 import { mouthWords } from "../mouthWords.ts";
 import { V } from "../colors.ts";
 import { Keys } from "./Keys.tsx";
@@ -112,12 +113,30 @@ function SongControls() {
   );
 }
 
-function DemoSongs() {
+function DemoSongs(props: { setStatus: (s: string) => void }) {
   const body = useStore((s) => s.body);
   const start = useStore((s) => s.start);
   const demo = useSing((s) => s.demo);
+  const [rendering, setRendering] = useState(false);
+  const render = async () => {
+    const name = useSing.getState().demo ?? DEMO_SONGS[0]?.name;
+    if (!name) return;
+    setRendering(true);
+    props.setStatus("Rendering MP4…");
+    try {
+      await exportDemo(name, body, start);
+      props.setStatus("Saved the MP4");
+    } catch (e) {
+      props.setStatus(e instanceof Error ? e.message : "Couldn't render the MP4");
+    } finally {
+      setRendering(false);
+    }
+  };
   return (
     <div className="demo-songs" role="group" aria-label="Demo songs">
+      <Chip toggle={false} onClick={() => void render()} disabled={rendering} title="Record a demo song to an MP4: the face and the sound">
+        {rendering ? "Rendering…" : "Render MP4"}
+      </Chip>
       {DEMO_SONGS.map((s) => (
         <Chip
           key={s.name}
@@ -144,12 +163,13 @@ export function SingRight() {
   useEffect(ensureDictionary, []);
   const ring = useStore((s) => s.artic.epilarynx >= RING - 0.05);
   const next = useSing((s) => (s.demo ? null : (s.syllables[s.cursor]?.text ?? null)));
+  const [mp4, setMp4] = useState("");
   return (
     <div className="right right-sing">
       <Screen className="s-roll" title="Piano roll" sub="Notes and the pitch sung">
         <PianoRoll />
       </Screen>
-      <Screen className="s-lyrics" title="Lyrics" sub="Each note sings the next syllable" tools={<DemoSongs />}>
+      <Screen className="s-lyrics" title="Lyrics" sub={mp4 || "Each note sings the next syllable"} tools={<DemoSongs setStatus={setMp4} />}>
         <Lyrics />
       </Screen>
       <Screen className="s-spec" title="Spectrum" sub={ring ? "Ring on" : ""}>

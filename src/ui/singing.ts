@@ -246,6 +246,12 @@ function endDemo(): void {
   useSing.setState({ demo: null, demoAt: -1, lyrics: w.lyrics, syllables, cursor: Math.min(w.cursor, Math.max(0, syllables.length - 1)) });
 }
 
+/** The demo that's scheduled, if one is: its end is plan time, its offset the voice clock of time 0. */
+export function demoTake(): { id: number; end: number; offset: number | null } | null {
+  if (!demoRun) return null;
+  return { id: demoRun.id, end: demoRun.end, offset: demoRun.offset };
+}
+
 engine.onPlanned((m) => {
   const d = demoRun;
   if (!d || m.id !== d.id) return;
