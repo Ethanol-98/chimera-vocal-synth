@@ -12,7 +12,10 @@ declare class AudioWorkletProcessor {
 }
 
 class RecorderProcessor extends AudioWorkletProcessor {
-  process(inputs: Float32Array[][]): boolean {
+  process(inputs: Float32Array[][], outputs: Float32Array[][]): boolean {
+    // A node with no output is not always pulled (Safari). The output is silence into a
+    // gain of 0, so it doesn't add to what the speakers play.
+    for (const ch of outputs[0] ?? []) ch.fill(0);
     const ch0 = inputs[0]?.[0];
     if (!ch0 || ch0.length === 0) return true;
     const ch1 = inputs[0][1] ?? ch0;

@@ -1,13 +1,13 @@
 /**
  * Record the picture on screen and the sound coming out of the speakers, then download an MP4.
  *
- * MediaRecorder's MP4 support depends on the browser, and a plain "video/mp4" recording is
- * often VP9 and Opus under an MP4 name. WebCodecs encodes H.264, plus AAC when the browser
- * has it, and {@link muxMp4} writes that into a real MP4. Opus is the sound when AAC isn't
- * available (still inside the MP4, next to H.264). MediaRecorder's own MP4 is the last resort.
+ * The picture is H.264. The sound is AAC-LC, which QuickTime, Safari, iOS and Windows
+ * Media Player actually play. Browsers that have no AAC encoder (desktop Chrome) use
+ * FFmpeg's AAC encoder in wasm. Opus-in-MP4 is not used: those players show it as silence.
  */
 import recorderUrl from "../worklet/recorder.ts?worker&url";
 import { engine } from "../audio/AudioEngine.ts";
+import { SoftwareAacEncoder } from "./aacEncode.ts";
 import { muxMp4, type Mp4AudioSample, type Mp4VideoSample } from "./mp4mux.ts";
 import { currentPlan, speakText } from "./speech.ts";
 import { demoTake, playDemo } from "./singing.ts";
@@ -42,26 +42,23 @@ async function recordTake(filename: string, run: () => Promise<number>): Promise
   const ctx = engine.ctx;
   if (!ctx) throw new Error("The voice didn't start");
   const path = await encoderPath(ctx.sampleRate);
-  if (path === "aac" || path === "opus") await recordWebCodecs(ctx, filename, run, path);
+  if (path === "native-aac" || path === "software-aac") await recordWebCodecs(ctx, filename, run, path);
   else if (path === "mediarecorder") await recordMediaRecorder(ctx, filename, run);
-  else throw new Error("This browser can't write an MP4. It needs H.264, and AAC or Opus.");
+  else throw new Error("This browser can't write an MP4. It needs an H.264 video encoder.");
 }
 
-type Path = "aac" | "opus" | "mediarecorder" | "none";
+type Path = "native-aac" | "software-aac" | "mediarecorder" | "none";
 
 async function encoderPath(sampleRate: number): Promise<Path> {
-  if (typeof VideoEncoder !== "undefined" && typeof AudioEncoder !== "undefined") {
+  if (typeof VideoEncoder !== "undefined") {
     try {
       const video = await VideoEncoder.isConfigSupported({ codec: "avc1.42001f", width: 640, height: 360, bitrate: 1_000_000, framerate: FPS, latencyMode: "realtime" });
       if (video.supported) {
-        const aac = await AudioEncoder.isConfigSupported({ codec: "mp4a.40.2", numberOfChannels: 2, sampleRate, bitrate: 128000 });
-        if (aac.supported) return "aac";
-        // AAC is the usual MP4 sound, but plenty of browsers ship H.264 without an AAC encoder.
-        const opus = await AudioEncoder.isConfigSupported({ codec: "opus", numberOfChannels: 2, sampleRate: 48000, bitrate: 128000 });
-        if (opus.supported && sampleRate === 48000) return "opus";
+        const aac = typeof AudioEncoder !== "undefined" && (await AudioEncoder.isConfigSupported({ codec: "mp4a.40.2", numberOfChannels: 2, sampleRate, bitrate: 128000 })).supported;
+        return aac ? "native-aac" : "software-aac";
       }
     } catch {
-      // try the other path
+      // try MediaRecorder, but only if it promises AAC
     }
   }
   return mp4Mime() ? "mediarecorder" : "none";
@@ -69,13 +66,13 @@ async function encoderPath(sampleRate: number): Promise<Path> {
 
 function mp4Mime(): string | null {
   if (typeof MediaRecorder === "undefined") return null;
-  for (const mime of ["video/mp4;codecs=avc1.42E01E,mp4a.40.2", "video/mp4;codecs=avc1,mp4a.40.2", "video/mp4"]) {
+  for (const mime of ["video/mp4;codecs=avc1.42E01E,mp4a.40.2", "video/mp4;codecs=avc1,mp4a.40.2"]) {
     if (MediaRecorder.isTypeSupported(mime)) return mime;
   }
   return null;
 }
 
-async function recordWebCodecs(ctx: AudioContext, filename: string, run: () => Promise<number>, audioCodec: "aac" | "opus"): Promise<void> {
+async function recordWebCodecs(ctx: AudioContext, filename: string, run: () => Promise<number>, audioPath: "native-aac" | "software-aac"): Promise<void> {
   const canvas = performanceCanvas();
   const { width, height } = fit(canvas.width, canvas.height);
   const off = makeCanvas(width, height);
@@ -100,30 +97,40 @@ async function recordWebCodecs(ctx: AudioContext, filename: string, run: () => P
       vError = e;
     },
   });
-  const aenc = new AudioEncoder({
-    output: (chunk, meta) => {
-      if (meta?.decoderConfig?.description) audioConfig = bytes(meta.decoderConfig.description);
-      const data = new Uint8Array(chunk.byteLength);
-      chunk.copyTo(data);
-      audio.push({ data, timestamp: chunk.timestamp });
-    },
-    error: (e) => {
-      aError = e;
-    },
-  });
+  const aenc = audioPath === "native-aac"
+    ? new AudioEncoder({
+        output: (chunk, meta) => {
+          if (meta?.decoderConfig?.description) audioConfig = bytes(meta.decoderConfig.description);
+          const data = new Uint8Array(chunk.byteLength);
+          chunk.copyTo(data);
+          audio.push({ data, timestamp: chunk.timestamp });
+        },
+        error: (e) => {
+          aError = e;
+        },
+      })
+    : null;
+  const soft = audioPath === "software-aac" ? await SoftwareAacEncoder.create(ctx.sampleRate, 2) : null;
+  if (soft) audioConfig = soft.config;
   const videoConfig: VideoEncoderConfig = { codec: "avc1.42001f", width, height, bitrate: 2_000_000, framerate: FPS, latencyMode: "realtime", avc: { format: "avc" } };
   try {
     venc.configure(videoConfig);
   } catch {
     venc.configure({ codec: "avc1.42001f", width, height, bitrate: 2_000_000, framerate: FPS });
   }
-  aenc.configure({ codec: audioCodec === "aac" ? "mp4a.40.2" : "opus", numberOfChannels: 2, sampleRate: ctx.sampleRate, bitrate: 128000 });
+  aenc?.configure({ codec: "mp4a.40.2", numberOfChannels: 2, sampleRate: ctx.sampleRate, bitrate: 128000 });
 
   if (!recorderModule) {
     await ctx.audioWorklet.addModule(recorderUrl);
     recorderModule = true;
   }
-  const rec = new AudioWorkletNode(ctx, "chimera-recorder", { numberOfInputs: 1, numberOfOutputs: 0, channelCount: 2 });
+  // One output, into a silent gain, so the node stays in the graph. A sink with no output
+  // is not pulled on every browser, and the file then has a silent (or missing) track.
+  const rec = new AudioWorkletNode(ctx, "chimera-recorder", { numberOfInputs: 1, numberOfOutputs: 1, outputChannelCount: [2] });
+  const sink = ctx.createGain();
+  sink.gain.value = 0;
+  rec.connect(sink);
+  sink.connect(ctx.destination);
   const origin = ctx.currentTime;
   let queued0: Float32Array[] = [];
   let queued1: Float32Array[] = [];
@@ -150,16 +157,26 @@ async function recordWebCodecs(ctx: AudioContext, filename: string, run: () => P
     }
     return { a, b };
   };
+  const originSample = Math.round(origin * ctx.sampleRate);
   const encodeAudio = (n: number) => {
     const frame = batchFrame;
     const { a, b } = take(n);
-    const data = new Float32Array(n * 2);
-    data.set(a, 0);
-    data.set(b, n);
-    const timestamp = Math.max(0, Math.round((frame / ctx.sampleRate - origin) * 1e6));
-    const audioData = new AudioData({ format: "f32-planar", sampleRate: ctx.sampleRate, numberOfFrames: n, numberOfChannels: 2, timestamp, data });
-    aenc.encode(audioData);
-    audioData.close();
+    if (soft) {
+      const interleaved = new Float32Array(n * 2);
+      for (let i = 0; i < n; i++) {
+        interleaved[i * 2] = a[i];
+        interleaved[i * 2 + 1] = b[i];
+      }
+      audio.push(...soft.push(interleaved, frame - originSample));
+    } else if (aenc) {
+      const data = new Float32Array(n * 2);
+      data.set(a, 0);
+      data.set(b, n);
+      const timestamp = Math.max(0, Math.round((frame / ctx.sampleRate - origin) * 1e6));
+      const audioData = new AudioData({ format: "f32-planar", sampleRate: ctx.sampleRate, numberOfFrames: n, numberOfChannels: 2, timestamp, data });
+      aenc.encode(audioData);
+      audioData.close();
+    }
     queued -= n;
     batchFrame = frame + n;
   };
@@ -204,17 +221,20 @@ async function recordWebCodecs(ctx: AudioContext, filename: string, run: () => P
     untap();
     rec.port.onmessage = null;
     rec.disconnect();
+    sink.disconnect();
   }
   if (failed) throw failed;
   if (queued > 0) encodeAudio(queued);
+  if (soft) audio.push(...soft.flush());
   await venc.flush();
-  await aenc.flush();
+  if (aenc) await aenc.flush();
   venc.close();
-  aenc.close();
+  aenc?.close();
+  soft?.close();
   if (vError || aError) throw vError ?? aError;
   if (!avcC || !audioConfig) throw new Error("The encoder didn't describe the MP4 tracks");
   if (!video.length || !audio.length) throw new Error("The recording was empty");
-  saveFile(muxMp4({ width, height, avcC, audioConfig, audioCodec, sampleRate: ctx.sampleRate, channels: 2, video, audio }), filename);
+  saveFile(muxMp4({ width, height, avcC, audioConfig, audioCodec: "aac", sampleRate: ctx.sampleRate, channels: 2, video, audio }), filename);
 }
 
 let recorderModule = false;
